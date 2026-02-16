@@ -12,9 +12,9 @@ export function Header() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-[var(--accent)] flex items-center justify-center">
-            <span className="text-[var(--bg-primary)] font-bold text-lg">G</span>
+            <span className="text-[var(--bg-primary)] font-bold text-lg">e</span>
           </div>
-          <h1 className="text-lg font-semibold tracking-tight">Grainrad</h1>
+          <h1 className="text-lg font-semibold tracking-tight">ephapse</h1>
         </div>
         <span className="text-xs text-[var(--text-secondary)] hidden sm:inline">
           WebGPU-powered effects

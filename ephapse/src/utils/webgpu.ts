@@ -77,15 +77,18 @@ export function setupCanvasContext(
 /**
  * Resize canvas to match display size with device pixel ratio
  */
-export function resizeCanvas(canvas: HTMLCanvasElement): void {
+export function resizeCanvas(canvas: HTMLCanvasElement): boolean {
   const dpr = Math.min(window.devicePixelRatio, 2);
-  const displayWidth = Math.floor(canvas.clientWidth * dpr);
-  const displayHeight = Math.floor(canvas.clientHeight * dpr);
+  const rect = canvas.getBoundingClientRect();
+  const displayWidth = Math.max(1, Math.floor(rect.width * dpr));
+  const displayHeight = Math.max(1, Math.floor(rect.height * dpr));
 
   if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
     canvas.width = displayWidth;
     canvas.height = displayHeight;
+    return true;
   }
+  return false;
 }
 
 /**

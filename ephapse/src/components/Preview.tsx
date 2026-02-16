@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { initWebGPU, setupCanvasContext, resizeCanvas } from '../utils/webgpu';
+import { initWebGPU, setupCanvasContext } from '../utils/webgpu';
 import { generateFontAtlas, CHARSETS } from '../utils/fontAtlas';
 import { AsciiEffect } from '../effects/asciiEffect';
 import { PostProcessEffect } from '../effects/postProcessEffect';
+import { BlockifyEffect } from '../effects/blockifyEffect';
+import { ThresholdEffect } from '../effects/thresholdEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
 export function Preview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const webgpuRef = useRef<{ device: GPUDevice; context: GPUCanvasContext; format: GPUTextureFormat } | null>(null);
   const asciiEffectRef = useRef<AsciiEffect | null>(null);
+  const blockifyEffectRef = useRef<BlockifyEffect | null>(null);
+  const thresholdEffectRef = useRef<ThresholdEffect | null>(null);
   const postProcessRef = useRef<PostProcessEffect | null>(null);
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
@@ -24,6 +28,7 @@ export function Preview() {
   const zoom = useAppStore((state) => state.zoom);
   const setZoom = useAppStore((state) => state.setZoom);
   const inputSource = useAppStore((state) => state.inputSource);
+  const activeEffect = useAppStore((state) => state.activeEffect);
 
   const cellSize = useAppStore((state) => state.character.cellSize);
   const spacing = useAppStore((state) => state.character.spacing);
@@ -95,7 +100,24 @@ export function Preview() {
     if (!canvas) return;
 
     isActiveRef.current = true;
-    let resizeHandler: (() => void) | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let animationFrameId: number | null = null;
+
+    const handleResize = () => {
+      if (canvas && canvas.parentElement) {
+        const parent = canvas.parentElement;
+        const rect = parent.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const dpr = Math.min(window.devicePixelRatio, 2);
+          const width = Math.floor(rect.width * dpr);
+          const height = Math.floor(rect.height * dpr);
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+          }
+        }
+      }
+    };
 
     const init = async () => {
       try {
@@ -129,19 +151,24 @@ export function Preview() {
         const asciiEffect = new AsciiEffect(device, format, fontAtlas);
         asciiEffectRef.current = asciiEffect;
 
+        const blockifyEffect = new BlockifyEffect(device, format);
+        blockifyEffectRef.current = blockifyEffect;
+
+        const thresholdEffect = new ThresholdEffect(device, format);
+        thresholdEffectRef.current = thresholdEffect;
+
         const postProcess = new PostProcessEffect(device, format);
         postProcessRef.current = postProcess;
 
-        resizeCanvas(canvas);
-        setIsReady(true);
+        animationFrameId = requestAnimationFrame(() => {
+          handleResize();
+          setIsReady(true);
+        });
 
-        resizeHandler = () => {
-          if (canvas) {
-            resizeCanvas(canvas);
-          }
-        };
-
-        window.addEventListener('resize', resizeHandler);
+        resizeObserver = new ResizeObserver(() => {
+          handleResize();
+        });
+        resizeObserver.observe(canvas.parentElement!);
       } catch (err) {
         if (isActiveRef.current) {
           setError(err instanceof Error ? err.message : 'Failed to initialize');
@@ -153,13 +180,18 @@ export function Preview() {
 
     return () => {
       isActiveRef.current = false;
-      if (resizeHandler) {
-        window.removeEventListener('resize', resizeHandler);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
       }
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
       asciiEffectRef.current?.destroy();
+      blockifyEffectRef.current?.destroy();
+      thresholdEffectRef.current?.destroy();
       postProcessRef.current?.destroy();
       sourceTextureRef.current?.destroy();
       intermediateTextureRef.current?.destroy();
@@ -168,6 +200,7 @@ export function Preview() {
 
   useEffect(() => {
     const webgpu = webgpuRef.current;
+    const canvas = canvasRef.current;
     if (!webgpu || !inputSource) return;
 
     if (sourceTextureRef.current) {
@@ -191,6 +224,16 @@ export function Preview() {
     );
 
     sourceTextureRef.current = texture;
+
+    if (canvas && canvas.parentElement) {
+      const parent = canvas.parentElement;
+      const rect = parent.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const dpr = Math.min(window.devicePixelRatio, 2);
+        canvas.width = Math.floor(rect.width * dpr);
+        canvas.height = Math.floor(rect.height * dpr);
+      }
+    }
   }, [inputSource]);
 
   useEffect(() => {
@@ -208,10 +251,11 @@ export function Preview() {
   useEffect(() => {
     const webgpu = webgpuRef.current;
     const asciiEffect = asciiEffectRef.current;
+    const blockifyEffect = blockifyEffectRef.current;
+    const thresholdEffect = thresholdEffectRef.current;
     const postProcess = postProcessRef.current;
-    const sourceTexture = sourceTextureRef.current;
 
-    if (!webgpu || !asciiEffect || !postProcess || !sourceTexture) return;
+    if (!webgpu || !asciiEffect || !postProcess) return;
 
     const { context } = webgpu;
     const canvas = canvasRef.current;
@@ -254,8 +298,26 @@ export function Preview() {
       crtCurve.enabled ||
       phosphor.enabled;
 
+    const getActiveEffect = () => {
+      switch (activeEffect) {
+        case 'blockify':
+          return blockifyEffect;
+        case 'threshold':
+          return thresholdEffect;
+        case 'ascii':
+        default:
+          return asciiEffect;
+      }
+    };
+
     const render = () => {
       if (!isActiveRef.current) return;
+
+      const sourceTexture = sourceTextureRef.current;
+      if (!sourceTexture) {
+        animationRef.current = requestAnimationFrame(render);
+        return;
+      }
 
       const now = performance.now();
       const delta = (now - lastTime) / 1000;
@@ -271,10 +333,21 @@ export function Preview() {
         const width = canvas.width;
         const height = canvas.height;
 
-        if (hasPostProcessing) {
+        if (width === 0 || height === 0) {
+          animationRef.current = requestAnimationFrame(render);
+          return;
+        }
+
+        const effect = getActiveEffect();
+        if (!effect) {
+          animationRef.current = requestAnimationFrame(render);
+          return;
+        }
+
+        if (hasPostProcessing && activeEffect === 'ascii') {
           const intermediate = ensureIntermediateTexture(width, height);
 
-          asciiEffect.render(
+          effect.render(
             sourceTexture,
             intermediate.createView(),
             width,
@@ -288,7 +361,7 @@ export function Preview() {
             height
           );
         } else {
-          asciiEffect.render(
+          effect.render(
             sourceTexture,
             outputTexture.createView(),
             width,
@@ -310,7 +383,7 @@ export function Preview() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [inputSource, isReady, bloom.enabled, grain.enabled, chromatic.enabled, scanlines.enabled, vignette.enabled, crtCurve.enabled, phosphor.enabled]);
+  }, [isReady, activeEffect, bloom.enabled, grain.enabled, chromatic.enabled, scanlines.enabled, vignette.enabled, crtCurve.enabled, phosphor.enabled]);
 
   return (
     <div className="flex-1 flex flex-col bg-[var(--bg-primary)] min-w-0">
@@ -342,31 +415,36 @@ export function Preview() {
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center min-h-0">
         {error ? (
           <div className="text-center p-8 text-red-400">
             <h3 className="text-lg font-medium mb-2">WebGPU Error</h3>
             <p className="text-sm">{error}</p>
           </div>
-        ) : inputSource ? (
-          <canvas
-            ref={canvasRef}
-            className="max-w-full max-h-full"
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: 'center center',
-            }}
-          />
         ) : (
-          <div className="text-center p-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-[var(--bg-tertiary)] flex items-center justify-center">
-              <span className="text-3xl">🎨</span>
-            </div>
-            <h3 className="text-lg font-medium mb-2">No Input</h3>
-            <p className="text-sm text-[var(--text-secondary)] max-w-xs">
-              Drop an image or click the Input panel to get started
-            </p>
-          </div>
+          <>
+            <canvas
+              ref={canvasRef}
+              className="w-full h-full object-contain"
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'center center',
+              }}
+            />
+            {!inputSource && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-[var(--bg-primary)]">
+                <div className="text-center p-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-[var(--bg-tertiary)] flex items-center justify-center">
+                    <span className="text-3xl">🎨</span>
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">No Input</h3>
+                  <p className="text-sm text-[var(--text-secondary)] max-w-xs">
+                    Drop an image or click the Input panel to get started
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

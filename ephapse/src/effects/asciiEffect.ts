@@ -640,31 +640,32 @@ export class AsciiEffect {
     const samplesPerAxis = this.options.matchQuality === 'fast' ? 2 :
                            this.options.matchQuality === 'quality' ? 4 : 3;
     
-    const data = new Float32Array(20);
-    let offset = 0;
+    const buffer = new ArrayBuffer(80);
+    const floatView = new Float32Array(buffer);
+    const uintView = new Uint32Array(buffer);
     
-    data[offset++] = sourceWidth;
-    data[offset++] = sourceHeight;
-    data[offset++] = this.options.cellSize;
-    data[offset++] = this.options.cellSize;
-    data[offset++] = gridCols;
-    data[offset++] = gridRows;
-    data[offset++] = this.fontAtlas.width;
-    data[offset++] = this.fontAtlas.height;
-    data[offset++] = this.fontAtlas.charWidth;
-    data[offset++] = this.fontAtlas.charHeight;
-    data[offset++] = this.fontAtlas.cols;
-    data[offset++] = this.fontAtlas.charset.length;
-    data[offset++] = this.options.brightnessWeight;
-    data[offset++] = this.options.invert ? 1 : 0;
-    data[offset++] = this.options.brightnessMapping;
-    data[offset++] = this.options.brightness;
-    data[offset++] = this.options.contrast;
-    data[offset++] = this.options.gamma;
-    data[offset++] = samplesPerAxis;
-    data[offset++] = 0;
+    floatView[0] = sourceWidth;
+    floatView[1] = sourceHeight;
+    floatView[2] = this.options.cellSize;
+    floatView[3] = this.options.cellSize;
+    uintView[4] = gridCols;
+    uintView[5] = gridRows;
+    floatView[6] = this.fontAtlas.width;
+    floatView[7] = this.fontAtlas.height;
+    floatView[8] = this.fontAtlas.charWidth;
+    floatView[9] = this.fontAtlas.charHeight;
+    uintView[10] = this.fontAtlas.cols;
+    uintView[11] = this.fontAtlas.charset.length;
+    floatView[12] = this.options.brightnessWeight;
+    floatView[13] = this.options.invert ? 1 : 0;
+    floatView[14] = this.options.brightnessMapping;
+    floatView[15] = this.options.brightness;
+    floatView[16] = this.options.contrast;
+    floatView[17] = this.options.gamma;
+    uintView[18] = samplesPerAxis;
+    floatView[19] = 0;
     
-    this.device.queue.writeBuffer(this.matchUniformBuffer, 0, data);
+    this.device.queue.writeBuffer(this.matchUniformBuffer, 0, buffer);
   }
   
   private updateAsciiUniforms(sourceWidth: number, sourceHeight: number, outputWidth: number, outputHeight: number, gridCols: number) {

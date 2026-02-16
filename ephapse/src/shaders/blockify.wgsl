@@ -1,19 +1,42 @@
+struct VertexOutput {
+  @builtin(position) position: vec4f,
+  @location(0) texCoord: vec2f,
+}
 
-  BS = `
-${ta}
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
+  var pos = array<vec2f, 3>(
+    vec2f(-1.0, -1.0),
+    vec2f(3.0, -1.0),
+    vec2f(-1.0, 3.0)
+  );
+
+  var uv = array<vec2f, 3>(
+    vec2f(0.0, 1.0),
+    vec2f(2.0, 1.0),
+    vec2f(0.0, -1.0)
+  );
+
+  var output: VertexOutput;
+  output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
+  output.texCoord = uv[vertexIndex];
+  return output;
+}
 
 struct BlockifyUniforms {
-  resolution: vec2f,       // offset 0
-  blockSize: f32,          // offset 8: 4 - 32 pixels
-  style: f32,              // offset 12: 0 = full, 1 = shaded, 2 = outline
-  borderWidth: f32,        // offset 16: 1 - 4 for outline mode
-  brightness: f32,         // offset 20
-  contrast: f32,           // offset 24
-  borderColorR: f32,       // offset 28
-  borderColorG: f32,       // offset 32
-  borderColorB: f32,       // offset 36
-  colorMode: f32,          // offset 40: 0 = average, 1 = grayscale
-  _pad: vec3f,             // padding
+  resolution: vec2f,
+  blockSize: f32,
+  style: f32,
+  borderWidth: f32,
+  brightness: f32,
+  contrast: f32,
+  borderColorR: f32,
+  borderColorG: f32,
+  borderColorB: f32,
+  colorMode: f32,
+  _pad: f32,
+  _pad2: f32,
+  _pad3: f32,
 }
 
 @group(0) @binding(0) var texSampler: sampler;
@@ -41,7 +64,6 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   var color = textureSample(inputTexture, texSampler, blockUV).rgb;
   color = applyBrightnessContrast(color, uniforms.brightness, uniforms.contrast);
 
-  // Apply grayscale if needed
   if (uniforms.colorMode > 0.5) {
     let gray = luminance(color);
     color = vec3f(gray);
@@ -50,15 +72,12 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let styleInt = i32(uniforms.style + 0.5);
 
   if (styleInt == 0) {
-    // Full blocks - just return the color
     return vec4f(color, 1.0);
   } else if (styleInt == 1) {
-    // Shaded - add slight gradient within block
     let localPos = (pixelPos - blockPos * uniforms.blockSize) / uniforms.blockSize;
     let shade = 0.9 + 0.1 * (1.0 - length(localPos - 0.5) * 1.4);
     return vec4f(color * shade, 1.0);
   } else {
-    // Outline - draw border around blocks
     let localPos = pixelPos - blockPos * uniforms.blockSize;
     let borderWidth = uniforms.borderWidth;
     let isEdge = localPos.x < borderWidth || localPos.x > uniforms.blockSize - borderWidth ||
