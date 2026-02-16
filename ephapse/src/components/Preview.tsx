@@ -7,6 +7,8 @@ import { AsciiEffect } from '../effects/asciiEffect';
 import { PostProcessEffect } from '../effects/postProcessEffect';
 import { BlockifyEffect } from '../effects/blockifyEffect';
 import { ThresholdEffect } from '../effects/thresholdEffect';
+import { HalftoneEffect } from '../effects/halftoneEffect';
+import { DotsEffect } from '../effects/dotsEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
 export function Preview() {
@@ -15,6 +17,8 @@ export function Preview() {
   const asciiEffectRef = useRef<AsciiEffect | null>(null);
   const blockifyEffectRef = useRef<BlockifyEffect | null>(null);
   const thresholdEffectRef = useRef<ThresholdEffect | null>(null);
+  const halftoneEffectRef = useRef<HalftoneEffect | null>(null);
+  const dotsEffectRef = useRef<DotsEffect | null>(null);
   const postProcessRef = useRef<PostProcessEffect | null>(null);
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
@@ -58,6 +62,37 @@ export function Preview() {
   const crtCurve = useAppStore((state) => state.postProcessing.crtCurve);
   const phosphor = useAppStore((state) => state.postProcessing.phosphor);
 
+  const blockifySize = useAppStore((state) => state.effectSettings.blockifySize);
+  const blockifyStyle = useAppStore((state) => state.effectSettings.blockifyStyle);
+  const blockifyBorderWidth = useAppStore((state) => state.effectSettings.blockifyBorderWidth);
+  const blockifyBorderColor = useAppStore((state) => state.effectSettings.blockifyBorderColor);
+  const blockifyGrayscale = useAppStore((state) => state.effectSettings.blockifyGrayscale);
+
+  const thresholdLevels = useAppStore((state) => state.effectSettings.thresholdLevels);
+  const thresholdDither = useAppStore((state) => state.effectSettings.thresholdDither);
+  const thresholdPoint = useAppStore((state) => state.effectSettings.thresholdPoint);
+  const thresholdInvert = useAppStore((state) => state.effectSettings.thresholdInvert);
+  const thresholdForeground = useAppStore((state) => state.effectSettings.thresholdForeground);
+  const thresholdBackground = useAppStore((state) => state.effectSettings.thresholdBackground);
+  const thresholdPreserveColors = useAppStore((state) => state.effectSettings.thresholdPreserveColors);
+
+  const halftoneSpacing = useAppStore((state) => state.effectSettings.halftoneSpacing);
+  const halftoneAngle = useAppStore((state) => state.effectSettings.halftoneAngle);
+  const halftoneShape = useAppStore((state) => state.effectSettings.halftoneShape);
+  const halftoneInvert = useAppStore((state) => state.effectSettings.halftoneInvert);
+  const halftoneColorMode = useAppStore((state) => state.effectSettings.halftoneColorMode);
+  const halftoneForeground = useAppStore((state) => state.effectSettings.halftoneForeground);
+  const halftoneBackground = useAppStore((state) => state.effectSettings.halftoneBackground);
+
+  const dotsSpacing = useAppStore((state) => state.effectSettings.dotsSpacing);
+  const dotsSize = useAppStore((state) => state.effectSettings.dotsSize);
+  const dotsShape = useAppStore((state) => state.effectSettings.dotsShape);
+  const dotsGridType = useAppStore((state) => state.effectSettings.dotsGridType);
+  const dotsInvert = useAppStore((state) => state.effectSettings.dotsInvert);
+  const dotsColorMode = useAppStore((state) => state.effectSettings.dotsColorMode);
+  const dotsForeground = useAppStore((state) => state.effectSettings.dotsForeground);
+  const dotsBackground = useAppStore((state) => state.effectSettings.dotsBackground);
+
   const asciiSettings = useMemo(() => ({
     cellSize,
     brightness,
@@ -94,6 +129,54 @@ export function Preview() {
     crt: { enabled: crtCurve.enabled, amount: crtCurve.amount },
     phosphor: { enabled: phosphor.enabled, color: phosphor.color },
   }), [bloom, grain, chromatic, scanlines, vignette, crtCurve, phosphor]);
+
+  const blockifySettings = useMemo(() => ({
+    blockSize: blockifySize,
+    style: blockifyStyle,
+    borderWidth: blockifyBorderWidth,
+    borderColor: blockifyBorderColor,
+    colorMode: blockifyGrayscale ? 1 : 0,
+    brightness: 0,
+    contrast: 0,
+  }), [blockifySize, blockifyStyle, blockifyBorderWidth, blockifyBorderColor, blockifyGrayscale]);
+
+  const thresholdSettings = useMemo(() => ({
+    levels: thresholdLevels,
+    dither: thresholdDither,
+    thresholdPoint: thresholdPoint,
+    invert: thresholdInvert,
+    foregroundColor: thresholdForeground,
+    backgroundColor: thresholdBackground,
+    preserveColors: thresholdPreserveColors,
+    brightness: 0,
+    contrast: 0,
+  }), [thresholdLevels, thresholdDither, thresholdPoint, thresholdInvert, thresholdForeground, thresholdBackground, thresholdPreserveColors]);
+
+  const halftoneSettings = useMemo(() => ({
+    spacing: halftoneSpacing,
+    angle: halftoneAngle,
+    shape: halftoneShape,
+    invert: halftoneInvert,
+    colorMode: halftoneColorMode,
+    foregroundColor: halftoneForeground,
+    backgroundColor: halftoneBackground,
+    dotScale: 1,
+    brightness: 0,
+    contrast: 0,
+  }), [halftoneSpacing, halftoneAngle, halftoneShape, halftoneInvert, halftoneColorMode, halftoneForeground, halftoneBackground]);
+
+  const dotsSettings = useMemo(() => ({
+    spacing: dotsSpacing,
+    sizeMultiplier: dotsSize,
+    shape: dotsShape,
+    gridType: dotsGridType,
+    invert: dotsInvert,
+    colorMode: dotsColorMode,
+    foregroundColor: dotsForeground,
+    backgroundColor: dotsBackground,
+    brightness: 0,
+    contrast: 0,
+  }), [dotsSpacing, dotsSize, dotsShape, dotsGridType, dotsInvert, dotsColorMode, dotsForeground, dotsBackground]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -157,6 +240,12 @@ export function Preview() {
         const thresholdEffect = new ThresholdEffect(device, format);
         thresholdEffectRef.current = thresholdEffect;
 
+        const halftoneEffect = new HalftoneEffect(device, format);
+        halftoneEffectRef.current = halftoneEffect;
+
+        const dotsEffect = new DotsEffect(device, format);
+        dotsEffectRef.current = dotsEffect;
+
         const postProcess = new PostProcessEffect(device, format);
         postProcessRef.current = postProcess;
 
@@ -192,6 +281,8 @@ export function Preview() {
       asciiEffectRef.current?.destroy();
       blockifyEffectRef.current?.destroy();
       thresholdEffectRef.current?.destroy();
+      halftoneEffectRef.current?.destroy();
+      dotsEffectRef.current?.destroy();
       postProcessRef.current?.destroy();
       sourceTextureRef.current?.destroy();
       intermediateTextureRef.current?.destroy();
@@ -241,6 +332,30 @@ export function Preview() {
     if (!effect) return;
     effect.updateOptions(asciiSettings);
   }, [asciiSettings]);
+
+  useEffect(() => {
+    const effect = blockifyEffectRef.current;
+    if (!effect) return;
+    effect.updateOptions(blockifySettings);
+  }, [blockifySettings]);
+
+  useEffect(() => {
+    const effect = thresholdEffectRef.current;
+    if (!effect) return;
+    effect.updateOptions(thresholdSettings);
+  }, [thresholdSettings]);
+
+  useEffect(() => {
+    const effect = halftoneEffectRef.current;
+    if (!effect) return;
+    effect.updateOptions(halftoneSettings);
+  }, [halftoneSettings]);
+
+  useEffect(() => {
+    const effect = dotsEffectRef.current;
+    if (!effect) return;
+    effect.updateOptions(dotsSettings);
+  }, [dotsSettings]);
 
   useEffect(() => {
     const effect = postProcessRef.current;
@@ -304,6 +419,10 @@ export function Preview() {
           return blockifyEffect;
         case 'threshold':
           return thresholdEffect;
+        case 'halftone':
+          return halftoneEffectRef.current;
+        case 'dots':
+          return dotsEffectRef.current;
         case 'ascii':
         default:
           return asciiEffect;

@@ -109,23 +109,49 @@ interface PostProcessingSettings {
 
 // Effect-specific settings
 interface EffectSettings {
+  // Blockify
+  blockifySize: number;
+  blockifyStyle: number;
+  blockifyBorderWidth: number;
+  blockifyBorderColor: [number, number, number];
+  blockifyGrayscale: boolean;
+  
+  // Threshold
+  thresholdLevels: number;
+  thresholdDither: boolean;
+  thresholdPoint: number;
+  thresholdInvert: boolean;
+  thresholdForeground: [number, number, number];
+  thresholdBackground: [number, number, number];
+  thresholdPreserveColors: boolean;
+  
+  // Halftone
+  halftoneSpacing: number;
+  halftoneAngle: number;
+  halftoneShape: number;
+  halftoneInvert: boolean;
+  halftoneColorMode: boolean;
+  halftoneForeground: [number, number, number];
+  halftoneBackground: [number, number, number];
+  
+  // Dots
+  dotsSpacing: number;
+  dotsSize: number;
+  dotsShape: number;
+  dotsGridType: number;
+  dotsInvert: boolean;
+  dotsColorMode: number;
+  dotsForeground: [number, number, number];
+  dotsBackground: [number, number, number];
+  
   // Dithering
   ditheringMethod: 'bayer2' | 'bayer4' | 'bayer8' | 'bayer16' | 'floydSteinberg' | 'atkinson' | 'ordered';
   colorLevels: number;
-  
-  // Halftone
-  dotScale: number;
-  angle: number;
-  dotShape: 'circle' | 'square' | 'diamond' | 'line';
   
   // Matrix Rain
   rainSpeed: number;
   trailLength: number;
   rainColor: [number, number, number];
-  
-  // Generic
-  threshold: number;
-  invert: boolean;
 }
 
 // Main store interface
@@ -229,16 +255,38 @@ const defaultPostProcessingSettings: PostProcessingSettings = {
 };
 
 const defaultEffectSettings: EffectSettings = {
+  blockifySize: 8,
+  blockifyStyle: 0,
+  blockifyBorderWidth: 1,
+  blockifyBorderColor: [1, 1, 1],
+  blockifyGrayscale: false,
+  thresholdLevels: 2,
+  thresholdDither: false,
+  thresholdPoint: 0.5,
+  thresholdInvert: false,
+  thresholdForeground: [1, 1, 1],
+  thresholdBackground: [0, 0, 0],
+  thresholdPreserveColors: false,
+  halftoneSpacing: 6,
+  halftoneAngle: 45,
+  halftoneShape: 0,
+  halftoneInvert: false,
+  halftoneColorMode: false,
+  halftoneForeground: [0, 0, 0],
+  halftoneBackground: [1, 1, 1],
+  dotsSpacing: 1,
+  dotsSize: 1,
+  dotsShape: 0,
+  dotsGridType: 0,
+  dotsInvert: false,
+  dotsColorMode: 0,
+  dotsForeground: [0, 0, 0],
+  dotsBackground: [1, 1, 1],
   ditheringMethod: 'bayer4',
   colorLevels: 2,
-  dotScale: 1,
-  angle: 45,
-  dotShape: 'circle',
   rainSpeed: 1,
   trailLength: 15,
   rainColor: [0, 1, 0],
-  threshold: 0.5,
-  invert: false,
 };
 
 const defaultPanelState: PanelState = {

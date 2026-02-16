@@ -114,6 +114,33 @@ export function SettingsPanel() {
   const postProcessingPhosphorEnabled = useAppStore((state) => state.postProcessing.phosphor.enabled);
   const postProcessingPhosphorColor = useAppStore((state) => state.postProcessing.phosphor.color);
   
+  const activeEffect = useAppStore((state) => state.activeEffect);
+  
+  const effectBlockifySize = useAppStore((state) => state.effectSettings.blockifySize);
+  const effectBlockifyStyle = useAppStore((state) => state.effectSettings.blockifyStyle);
+  const effectBlockifyBorderWidth = useAppStore((state) => state.effectSettings.blockifyBorderWidth);
+  const effectBlockifyBorderColor = useAppStore((state) => state.effectSettings.blockifyBorderColor);
+  const effectBlockifyGrayscale = useAppStore((state) => state.effectSettings.blockifyGrayscale);
+  
+  const effectThresholdLevels = useAppStore((state) => state.effectSettings.thresholdLevels);
+  const effectThresholdDither = useAppStore((state) => state.effectSettings.thresholdDither);
+  const effectThresholdPoint = useAppStore((state) => state.effectSettings.thresholdPoint);
+  const effectThresholdInvert = useAppStore((state) => state.effectSettings.thresholdInvert);
+  const effectThresholdPreserveColors = useAppStore((state) => state.effectSettings.thresholdPreserveColors);
+  
+  const effectHalftoneSpacing = useAppStore((state) => state.effectSettings.halftoneSpacing);
+  const effectHalftoneAngle = useAppStore((state) => state.effectSettings.halftoneAngle);
+  const effectHalftoneShape = useAppStore((state) => state.effectSettings.halftoneShape);
+  const effectHalftoneInvert = useAppStore((state) => state.effectSettings.halftoneInvert);
+  const effectHalftoneColorMode = useAppStore((state) => state.effectSettings.halftoneColorMode);
+  
+  const effectDotsSpacing = useAppStore((state) => state.effectSettings.dotsSpacing);
+  const effectDotsSize = useAppStore((state) => state.effectSettings.dotsSize);
+  const effectDotsShape = useAppStore((state) => state.effectSettings.dotsShape);
+  const effectDotsGridType = useAppStore((state) => state.effectSettings.dotsGridType);
+  const effectDotsInvert = useAppStore((state) => state.effectSettings.dotsInvert);
+  const effectDotsColorMode = useAppStore((state) => state.effectSettings.dotsColorMode);
+  
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
   const updateCharacter = useAppStore((state) => state.updateCharacter);
@@ -121,6 +148,7 @@ export function SettingsPanel() {
   const updateColor = useAppStore((state) => state.updateColor);
   const updateAdvanced = useAppStore((state) => state.updateAdvanced);
   const updatePostProcessing = useAppStore((state) => state.updatePostProcessing);
+  const updateEffectSettings = useAppStore((state) => state.updateEffectSettings);
   const resetSettings = useAppStore((state) => state.resetSettings);
 
   if (!panelsSettings) return null;
@@ -147,6 +175,241 @@ export function SettingsPanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* Blockify Settings - only show when active */}
+        {activeEffect === 'blockify' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Blockify Settings</h3>
+            <Slider
+              label="Block Size"
+              value={effectBlockifySize}
+              min={2}
+              max={64}
+              onChange={(v) => updateEffectSettings({ blockifySize: v })}
+              suffix="px"
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Style</label>
+              <select
+                value={effectBlockifyStyle}
+                onChange={(e) => updateEffectSettings({ blockifyStyle: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Full Blocks</option>
+                <option value={1}>Shaded</option>
+                <option value={2}>Outline</option>
+              </select>
+            </div>
+            {effectBlockifyStyle === 2 && (
+              <>
+                <Slider
+                  label="Border Width"
+                  value={effectBlockifyBorderWidth}
+                  min={1}
+                  max={Math.floor(effectBlockifySize / 2) - 1 || 1}
+                  onChange={(v) => updateEffectSettings({ blockifyBorderWidth: v })}
+                  suffix="px"
+                />
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-2">Border Color</label>
+                  <input
+                    type="color"
+                    value={`#${Math.round(effectBlockifyBorderColor[0] * 255).toString(16).padStart(2, '0')}${Math.round(effectBlockifyBorderColor[1] * 255).toString(16).padStart(2, '0')}${Math.round(effectBlockifyBorderColor[2] * 255).toString(16).padStart(2, '0')}`}
+                    onChange={(e) => {
+                      const hex = e.target.value.slice(1);
+                      const r = parseInt(hex.slice(0, 2), 16) / 255;
+                      const g = parseInt(hex.slice(2, 4), 16) / 255;
+                      const b = parseInt(hex.slice(4, 6), 16) / 255;
+                      updateEffectSettings({ blockifyBorderColor: [r, g, b] });
+                    }}
+                    className="w-full h-8 rounded cursor-pointer"
+                  />
+                </div>
+              </>
+            )}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectBlockifyGrayscale}
+                onChange={(e) => updateEffectSettings({ blockifyGrayscale: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Grayscale</span>
+            </label>
+          </div>
+        )}
+
+        {/* Threshold Settings - only show when active */}
+        {activeEffect === 'threshold' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Threshold Settings</h3>
+            <Slider
+              label="Levels"
+              value={effectThresholdLevels}
+              min={2}
+              max={8}
+              onChange={(v) => updateEffectSettings({ thresholdLevels: v })}
+            />
+            {effectThresholdLevels === 2 && (
+              <Slider
+                label="Threshold Point"
+                value={effectThresholdPoint}
+                min={0}
+                max={1}
+                step={0.05}
+                onChange={(v) => updateEffectSettings({ thresholdPoint: v })}
+              />
+            )}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectThresholdDither}
+                onChange={(e) => updateEffectSettings({ thresholdDither: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Dither</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectThresholdInvert}
+                onChange={(e) => updateEffectSettings({ thresholdInvert: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Invert</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectThresholdPreserveColors}
+                onChange={(e) => updateEffectSettings({ thresholdPreserveColors: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Preserve Colors</span>
+            </label>
+          </div>
+        )}
+
+        {/* Halftone Settings - only show when active */}
+        {activeEffect === 'halftone' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Halftone Settings</h3>
+            <Slider
+              label="Dot Spacing"
+              value={effectHalftoneSpacing}
+              min={3}
+              max={20}
+              onChange={(v) => updateEffectSettings({ halftoneSpacing: v })}
+              suffix="px"
+            />
+            <Slider
+              label="Angle"
+              value={effectHalftoneAngle}
+              min={0}
+              max={90}
+              onChange={(v) => updateEffectSettings({ halftoneAngle: v })}
+              suffix="°"
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Shape</label>
+              <select
+                value={effectHalftoneShape}
+                onChange={(e) => updateEffectSettings({ halftoneShape: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Circle</option>
+                <option value={1}>Square</option>
+                <option value={2}>Diamond</option>
+                <option value={3}>Line</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectHalftoneInvert}
+                onChange={(e) => updateEffectSettings({ halftoneInvert: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Invert</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectHalftoneColorMode}
+                onChange={(e) => updateEffectSettings({ halftoneColorMode: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Use Original Colors</span>
+            </label>
+          </div>
+        )}
+
+        {/* Dots Settings - only show when active */}
+        {activeEffect === 'dots' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Dots Settings</h3>
+            <Slider
+              label="Spacing"
+              value={effectDotsSpacing}
+              min={0.5}
+              max={3}
+              step={0.25}
+              onChange={(v) => updateEffectSettings({ dotsSpacing: v })}
+            />
+            <Slider
+              label="Dot Size"
+              value={effectDotsSize}
+              min={0.5}
+              max={2}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ dotsSize: v })}
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Shape</label>
+              <select
+                value={effectDotsShape}
+                onChange={(e) => updateEffectSettings({ dotsShape: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Circle</option>
+                <option value={1}>Square</option>
+                <option value={2}>Diamond</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Grid Type</label>
+              <select
+                value={effectDotsGridType}
+                onChange={(e) => updateEffectSettings({ dotsGridType: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Square</option>
+                <option value={1}>Hexagonal</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectDotsInvert}
+                onChange={(e) => updateEffectSettings({ dotsInvert: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Invert</span>
+            </label>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
+              <select
+                value={effectDotsColorMode}
+                onChange={(e) => updateEffectSettings({ dotsColorMode: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Original Colors</option>
+                <option value={1}>Grayscale</option>
+                <option value={2}>Custom</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* Character Settings */}
         <Section
           title="Character"

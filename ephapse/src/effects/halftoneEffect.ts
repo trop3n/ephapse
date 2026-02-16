@@ -1,28 +1,38 @@
-struct VertexOutput {
-  @builtin(position) position: vec4f,
-  @location(0) texCoord: vec2f,
+/**
+ * Halftone Effect - Newspaper-style dot patterns
+ */
+
+import { SinglePassEffect } from './singlePassEffect';
+
+export interface HalftoneOptions {
+  resolution: [number, number];
+  brightness: number;
+  contrast: number;
+  dotScale: number;
+  spacing: number;
+  angle: number;
+  shape: number;
+  invert: boolean;
+  colorMode: boolean;
+  foregroundColor: [number, number, number];
+  backgroundColor: [number, number, number];
 }
 
-@vertex
-fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-  var pos = array<vec2f, 3>(
-    vec2f(-1.0, -1.0),
-    vec2f(3.0, -1.0),
-    vec2f(-1.0, 3.0)
-  );
+const DEFAULT_OPTIONS: HalftoneOptions = {
+  resolution: [0, 0],
+  brightness: 0,
+  contrast: 0,
+  dotScale: 1,
+  spacing: 8,
+  angle: 45,
+  shape: 0,
+  invert: false,
+  colorMode: false,
+  foregroundColor: [0, 0, 0],
+  backgroundColor: [1, 1, 1],
+};
 
-  var uv = array<vec2f, 3>(
-    vec2f(0.0, 1.0),
-    vec2f(2.0, 1.0),
-    vec2f(0.0, -1.0)
-  );
-
-  var output: VertexOutput;
-  output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
-  output.texCoord = uv[vertexIndex];
-  return output;
-}
-
+const FRAGMENT_SHADER = `
 struct HalftoneUniforms {
   resolution: vec2f,
   dotScale: f32,
@@ -116,4 +126,41 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let finalColor = select(bwModeResult, colorModeResult, isColorMode);
 
   return vec4f(finalColor, 1.0);
+}
+`;
+
+export class HalftoneEffect extends SinglePassEffect<HalftoneOptions> {
+  constructor(device: GPUDevice, format: GPUTextureFormat, options: Partial<HalftoneOptions> = {}) {
+    super(device, format, { ...DEFAULT_OPTIONS, ...options });
+  }
+  
+  protected getFragmentShader(): string {
+    return FRAGMENT_SHADER;
+  }
+  
+  protected getUniformBufferSize(): number {
+    return 64;
+  }
+  
+  protected writeUniforms(): void {
+    const data = new Float32Array(16);
+    data[0] = this.options.resolution[0];
+    data[1] = this.options.resolution[1];
+    data[2] = this.options.dotScale;
+    data[3] = this.options.angle;
+    data[4] = this.options.shape;
+    data[5] = this.options.spacing;
+    data[6] = this.options.invert ? 1 : 0;
+    data[7] = this.options.colorMode ? 1 : 0;
+    data[8] = this.options.backgroundColor[0];
+    data[9] = this.options.backgroundColor[1];
+    data[10] = this.options.backgroundColor[2];
+    data[11] = this.options.foregroundColor[0];
+    data[12] = this.options.foregroundColor[1];
+    data[13] = this.options.foregroundColor[2];
+    data[14] = this.options.brightness;
+    data[15] = this.options.contrast;
+    
+    this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
+  }
 }

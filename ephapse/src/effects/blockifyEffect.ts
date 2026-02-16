@@ -80,8 +80,8 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
     return vec4f(color * shade, 1.0);
   } else {
     let localPos = pixelPos - blockPos * uniforms.blockSize;
-    let bw = uniforms.borderWidth;
     let bs = uniforms.blockSize;
+    let bw = min(uniforms.borderWidth, bs * 0.5 - 1.0);
     let isEdge = localPos.x < bw || localPos.x > bs - bw ||
                  localPos.y < bw || localPos.y > bs - bw;
     if (isEdge) {
