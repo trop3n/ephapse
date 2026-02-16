@@ -1,28 +1,34 @@
-struct VertexOutput {
-  @builtin(position) position: vec4f,
-  @location(0) texCoord: vec2f,
+/**
+ * VHS Effect - Retro tape distortion
+ */
+
+import { SinglePassEffect } from './singlePassEffect';
+
+export interface VhsOptions {
+  resolution: [number, number];
+  brightness: number;
+  contrast: number;
+  time: number;
+  distortion: number;
+  noise: number;
+  colorBleed: number;
+  scanlines: number;
+  trackingError: number;
 }
 
-@vertex
-fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-  var pos = array<vec2f, 3>(
-    vec2f(-1.0, -1.0),
-    vec2f(3.0, -1.0),
-    vec2f(-1.0, 3.0)
-  );
+const DEFAULT_OPTIONS: VhsOptions = {
+  resolution: [0, 0],
+  brightness: 0,
+  contrast: 0,
+  time: 0,
+  distortion: 0.5,
+  noise: 0.3,
+  colorBleed: 0.5,
+  scanlines: 0.5,
+  trackingError: 0.3,
+};
 
-  var uv = array<vec2f, 3>(
-    vec2f(0.0, 1.0),
-    vec2f(2.0, 1.0),
-    vec2f(0.0, -1.0)
-  );
-
-  var output: VertexOutput;
-  output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
-  output.texCoord = uv[vertexIndex];
-  return output;
-}
-
+const FRAGMENT_SHADER = `
 struct VhsUniforms {
   resolution: vec2f,
   time: f32,
@@ -118,27 +124,12 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
     let scanline = sin(uv.y * uniforms.resolution.y * 3.14159) * 0.5 + 0.5;
     let scanlineIntensity = mix(1.0, scanline, uniforms.scanlines * 0.5);
     color = color * scanlineIntensity;
-
-    let scanlinePhase = floor(uv.y * uniforms.resolution.y);
-    color.r = color.r * (1.0 - uniforms.scanlines * 0.1 * step(0.5, fract(scanlinePhase * 0.5)));
   }
 
   if (uniforms.noise > 0.01) {
     let grain = hash(uv * uniforms.resolution + vec2f(time * 1000.0)) - 0.5;
     color = color + vec3f(grain * uniforms.noise * 0.3);
-
-    let bandNoise = noise(vec2f(uv.y * 100.0, time * 5.0));
-    let band = step(0.97, bandNoise) * (hash(vec2f(uv.x * 100.0, time)) - 0.5);
-    color = color + vec3f(band * uniforms.noise);
-
-    let barY = fract(time * 0.3);
-    let barDist = abs(uv.y - barY);
-    let inBar = step(barDist, 0.02);
-    let barNoise = hash(vec2f(uv.x * 500.0, floor(time * 60.0))) - 0.5;
-    color = color + vec3f(barNoise * inBar * uniforms.noise * 0.5);
   }
-
-  color = mix(color, vec3f(dot(color, vec3f(0.299, 0.587, 0.114))), 0.1);
 
   color.r = color.r * 1.1;
   color.b = color.b * 0.9;
@@ -148,4 +139,35 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
 
   color = applyBrightnessContrast(color, uniforms.brightness * 0.005, uniforms.contrast * 0.01);
   return vec4f(clamp(color, vec3f(0.0), vec3f(1.0)), 1.0);
+}
+`;
+
+export class VhsEffect extends SinglePassEffect<VhsOptions> {
+  constructor(device: GPUDevice, format: GPUTextureFormat, options: Partial<VhsOptions> = {}) {
+    super(device, format, { ...DEFAULT_OPTIONS, ...options });
+  }
+  
+  protected getFragmentShader(): string {
+    return FRAGMENT_SHADER;
+  }
+  
+  protected getUniformBufferSize(): number {
+    return 40;
+  }
+  
+  protected writeUniforms(): void {
+    const data = new Float32Array(10);
+    data[0] = this.options.resolution[0];
+    data[1] = this.options.resolution[1];
+    data[2] = this.options.time;
+    data[3] = this.options.distortion;
+    data[4] = this.options.noise;
+    data[5] = this.options.colorBleed;
+    data[6] = this.options.scanlines;
+    data[7] = this.options.trackingError;
+    data[8] = this.options.brightness;
+    data[9] = this.options.contrast;
+    
+    this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
+  }
 }

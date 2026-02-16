@@ -13,6 +13,13 @@ import { EdgeDetectionEffect } from '../effects/edgeDetectionEffect';
 import { CrosshatchEffect } from '../effects/crosshatchEffect';
 import { WaveLinesEffect } from '../effects/waveLinesEffect';
 import { NoiseFieldEffect } from '../effects/noiseFieldEffect';
+import { VhsEffect } from '../effects/vhsEffect';
+import { PixelSortEffect } from '../effects/pixelSortEffect';
+import { BlurEffect } from '../effects/blurEffect';
+import { ContourEffect } from '../effects/contourEffect';
+import { VoronoiEffect } from '../effects/voronoiEffect';
+import { MatrixRainEffect } from '../effects/matrixRainEffect';
+import { DitheringEffect } from '../effects/ditheringEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
 export function Preview() {
@@ -27,6 +34,13 @@ export function Preview() {
   const crosshatchRef = useRef<CrosshatchEffect | null>(null);
   const waveLinesRef = useRef<WaveLinesEffect | null>(null);
   const noiseFieldRef = useRef<NoiseFieldEffect | null>(null);
+  const vhsRef = useRef<VhsEffect | null>(null);
+  const pixelSortRef = useRef<PixelSortEffect | null>(null);
+  const blurRef = useRef<BlurEffect | null>(null);
+  const contourRef = useRef<ContourEffect | null>(null);
+  const voronoiRef = useRef<VoronoiEffect | null>(null);
+  const matrixRainRef = useRef<MatrixRainEffect | null>(null);
+  const ditheringRef = useRef<DitheringEffect | null>(null);
   const postProcessRef = useRef<PostProcessEffect | null>(null);
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
@@ -135,6 +149,50 @@ export function Preview() {
   const noiseFieldType = useAppStore((state) => state.effectSettings.noiseFieldType);
   const noiseFieldDistortOnly = useAppStore((state) => state.effectSettings.noiseFieldDistortOnly);
   const noiseFieldAnimate = useAppStore((state) => state.effectSettings.noiseFieldAnimate);
+
+  const vhsDistortion = useAppStore((state) => state.effectSettings.vhsDistortion);
+  const vhsNoise = useAppStore((state) => state.effectSettings.vhsNoise);
+  const vhsColorBleed = useAppStore((state) => state.effectSettings.vhsColorBleed);
+  const vhsScanlines = useAppStore((state) => state.effectSettings.vhsScanlines);
+  const vhsTrackingError = useAppStore((state) => state.effectSettings.vhsTrackingError);
+
+  const pixelSortThreshold = useAppStore((state) => state.effectSettings.pixelSortThreshold);
+  const pixelSortDirection = useAppStore((state) => state.effectSettings.pixelSortDirection);
+  const pixelSortMode = useAppStore((state) => state.effectSettings.pixelSortMode);
+  const pixelSortStreakLength = useAppStore((state) => state.effectSettings.pixelSortStreakLength);
+  const pixelSortIntensity = useAppStore((state) => state.effectSettings.pixelSortIntensity);
+  const pixelSortRandomness = useAppStore((state) => state.effectSettings.pixelSortRandomness);
+  const pixelSortReverse = useAppStore((state) => state.effectSettings.pixelSortReverse);
+
+  const blurRadius = useAppStore((state) => state.effectSettings.blurRadius);
+
+  const contourLevels = useAppStore((state) => state.effectSettings.contourLevels);
+  const contourLineThickness = useAppStore((state) => state.effectSettings.contourLineThickness);
+  const contourFillMode = useAppStore((state) => state.effectSettings.contourFillMode);
+  const contourColorMode = useAppStore((state) => state.effectSettings.contourColorMode);
+  const contourInvert = useAppStore((state) => state.effectSettings.contourInvert);
+  const contourLineColor = useAppStore((state) => state.effectSettings.contourLineColor);
+  const contourBgColor = useAppStore((state) => state.effectSettings.contourBgColor);
+
+  const voronoiCellSize = useAppStore((state) => state.effectSettings.voronoiCellSize);
+  const voronoiEdgeWidth = useAppStore((state) => state.effectSettings.voronoiEdgeWidth);
+  const voronoiEdgeColor = useAppStore((state) => state.effectSettings.voronoiEdgeColor);
+  const voronoiColorMode = useAppStore((state) => state.effectSettings.voronoiColorMode);
+  const voronoiRandomize = useAppStore((state) => state.effectSettings.voronoiRandomize);
+
+  const matrixRainCellSize = useAppStore((state) => state.effectSettings.matrixRainCellSize);
+  const matrixRainSpeed = useAppStore((state) => state.effectSettings.matrixRainSpeed);
+  const matrixRainTrailLength = useAppStore((state) => state.effectSettings.matrixRainTrailLength);
+  const matrixRainColor = useAppStore((state) => state.effectSettings.matrixRainColor);
+  const matrixRainBgOpacity = useAppStore((state) => state.effectSettings.matrixRainBgOpacity);
+  const matrixRainGlowIntensity = useAppStore((state) => state.effectSettings.matrixRainGlowIntensity);
+  const matrixRainDirection = useAppStore((state) => state.effectSettings.matrixRainDirection);
+  const matrixRainThreshold = useAppStore((state) => state.effectSettings.matrixRainThreshold);
+  const matrixRainSpacing = useAppStore((state) => state.effectSettings.matrixRainSpacing);
+
+  const ditheringMethod = useAppStore((state) => state.effectSettings.ditheringMethod);
+  const ditheringColorLevels = useAppStore((state) => state.effectSettings.ditheringColorLevels);
+  const ditheringMatrixSize = useAppStore((state) => state.effectSettings.ditheringMatrixSize);
 
   const asciiSettings = useMemo(() => ({
     cellSize,
@@ -274,6 +332,80 @@ export function Preview() {
     time: 0,
   }), [noiseFieldScale, noiseFieldIntensity, noiseFieldSpeed, noiseFieldOctaves, noiseFieldType, noiseFieldDistortOnly, noiseFieldAnimate]);
 
+  const vhsSettings = useMemo(() => ({
+    distortion: vhsDistortion,
+    noise: vhsNoise,
+    colorBleed: vhsColorBleed,
+    scanlines: vhsScanlines,
+    trackingError: vhsTrackingError,
+    brightness: 0,
+    contrast: 0,
+    time: 0,
+  }), [vhsDistortion, vhsNoise, vhsColorBleed, vhsScanlines, vhsTrackingError]);
+
+  const pixelSortSettings = useMemo(() => ({
+    threshold: pixelSortThreshold,
+    direction: pixelSortDirection,
+    mode: pixelSortMode,
+    streakLength: pixelSortStreakLength,
+    intensity: pixelSortIntensity,
+    randomness: pixelSortRandomness,
+    reverse: pixelSortReverse,
+    brightness: 0,
+    contrast: 0,
+  }), [pixelSortThreshold, pixelSortDirection, pixelSortMode, pixelSortStreakLength, pixelSortIntensity, pixelSortRandomness, pixelSortReverse]);
+
+  const blurSettings = useMemo(() => ({
+    radius: blurRadius,
+    brightness: 0,
+    contrast: 0,
+  }), [blurRadius]);
+
+  const contourSettings = useMemo(() => ({
+    levels: contourLevels,
+    lineThickness: contourLineThickness,
+    fillMode: contourFillMode,
+    colorMode: contourColorMode,
+    invert: contourInvert,
+    lineColor: contourLineColor,
+    bgColor: contourBgColor,
+    brightness: 0,
+    contrast: 0,
+  }), [contourLevels, contourLineThickness, contourFillMode, contourColorMode, contourInvert, contourLineColor, contourBgColor]);
+
+  const voronoiSettings = useMemo(() => ({
+    cellSize: voronoiCellSize,
+    edgeWidth: voronoiEdgeWidth,
+    edgeColor: voronoiEdgeColor,
+    colorMode: voronoiColorMode,
+    randomize: voronoiRandomize,
+    brightness: 0,
+    contrast: 0,
+  }), [voronoiCellSize, voronoiEdgeWidth, voronoiEdgeColor, voronoiColorMode, voronoiRandomize]);
+
+  const matrixRainSettings = useMemo(() => ({
+    cellSize: matrixRainCellSize,
+    speed: matrixRainSpeed,
+    trailLength: matrixRainTrailLength,
+    rainColor: matrixRainColor,
+    bgOpacity: matrixRainBgOpacity,
+    glowIntensity: matrixRainGlowIntensity,
+    direction: matrixRainDirection,
+    threshold: matrixRainThreshold,
+    spacing: matrixRainSpacing,
+    brightness: 0,
+    contrast: 0,
+    time: 0,
+  }), [matrixRainCellSize, matrixRainSpeed, matrixRainTrailLength, matrixRainColor, matrixRainBgOpacity, matrixRainGlowIntensity, matrixRainDirection, matrixRainThreshold, matrixRainSpacing]);
+
+  const ditheringSettings = useMemo(() => ({
+    method: ditheringMethod,
+    colorLevels: ditheringColorLevels,
+    matrixSize: ditheringMatrixSize,
+    brightness: 0,
+    contrast: 0,
+  }), [ditheringMethod, ditheringColorLevels, ditheringMatrixSize]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -354,6 +486,27 @@ export function Preview() {
         const noiseFieldEffect = new NoiseFieldEffect(device, format);
         noiseFieldRef.current = noiseFieldEffect;
 
+        const vhsEffect = new VhsEffect(device, format);
+        vhsRef.current = vhsEffect;
+
+        const pixelSortEffect = new PixelSortEffect(device, format);
+        pixelSortRef.current = pixelSortEffect;
+
+        const blurEffect = new BlurEffect(device, format);
+        blurRef.current = blurEffect;
+
+        const contourEffect = new ContourEffect(device, format);
+        contourRef.current = contourEffect;
+
+        const voronoiEffect = new VoronoiEffect(device, format);
+        voronoiRef.current = voronoiEffect;
+
+        const matrixRainEffect = new MatrixRainEffect(device, format);
+        matrixRainRef.current = matrixRainEffect;
+
+        const ditheringEffect = new DitheringEffect(device, format);
+        ditheringRef.current = ditheringEffect;
+
         const postProcess = new PostProcessEffect(device, format);
         postProcessRef.current = postProcess;
 
@@ -395,6 +548,13 @@ export function Preview() {
       crosshatchRef.current?.destroy();
       waveLinesRef.current?.destroy();
       noiseFieldRef.current?.destroy();
+      vhsRef.current?.destroy();
+      pixelSortRef.current?.destroy();
+      blurRef.current?.destroy();
+      contourRef.current?.destroy();
+      voronoiRef.current?.destroy();
+      matrixRainRef.current?.destroy();
+      ditheringRef.current?.destroy();
       postProcessRef.current?.destroy();
       sourceTextureRef.current?.destroy();
       intermediateTextureRef.current?.destroy();
@@ -494,6 +654,48 @@ export function Preview() {
   }, [noiseFieldSettings]);
 
   useEffect(() => {
+    const effect = vhsRef.current;
+    if (!effect) return;
+    effect.updateOptions({ ...vhsSettings, time: timeRef.current });
+  }, [vhsSettings]);
+
+  useEffect(() => {
+    const effect = pixelSortRef.current;
+    if (!effect) return;
+    effect.updateOptions(pixelSortSettings);
+  }, [pixelSortSettings]);
+
+  useEffect(() => {
+    const effect = blurRef.current;
+    if (!effect) return;
+    effect.updateOptions(blurSettings);
+  }, [blurSettings]);
+
+  useEffect(() => {
+    const effect = contourRef.current;
+    if (!effect) return;
+    effect.updateOptions(contourSettings);
+  }, [contourSettings]);
+
+  useEffect(() => {
+    const effect = voronoiRef.current;
+    if (!effect) return;
+    effect.updateOptions(voronoiSettings);
+  }, [voronoiSettings]);
+
+  useEffect(() => {
+    const effect = matrixRainRef.current;
+    if (!effect) return;
+    effect.updateOptions({ ...matrixRainSettings, time: timeRef.current });
+  }, [matrixRainSettings]);
+
+  useEffect(() => {
+    const effect = ditheringRef.current;
+    if (!effect) return;
+    effect.updateOptions(ditheringSettings);
+  }, [ditheringSettings]);
+
+  useEffect(() => {
     const effect = postProcessRef.current;
     if (!effect) return;
     effect.updateOptions({ ...postProcessSettings, time: timeRef.current });
@@ -567,6 +769,20 @@ export function Preview() {
           return waveLinesRef.current;
         case 'noiseField':
           return noiseFieldRef.current;
+        case 'vhs':
+          return vhsRef.current;
+        case 'pixelSort':
+          return pixelSortRef.current;
+        case 'blur':
+          return blurRef.current;
+        case 'contour':
+          return contourRef.current;
+        case 'voronoi':
+          return voronoiRef.current;
+        case 'matrixRain':
+          return matrixRainRef.current;
+        case 'dithering':
+          return ditheringRef.current;
         case 'ascii':
         default:
           return asciiEffect;
@@ -598,6 +814,10 @@ export function Preview() {
       if (noiseFieldAnimate) {
         noiseFieldRef.current?.updateOptions({ time: timeRef.current });
       }
+
+      vhsRef.current?.updateOptions({ time: timeRef.current });
+
+      matrixRainRef.current?.updateOptions({ time: timeRef.current });
 
       try {
         const outputTexture = context.getCurrentTexture();

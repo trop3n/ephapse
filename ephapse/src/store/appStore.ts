@@ -183,11 +183,58 @@ interface EffectSettings {
   noiseFieldDistortOnly: boolean;
   noiseFieldAnimate: boolean;
   
-  // Dithering
-  ditheringMethod: 'bayer2' | 'bayer4' | 'bayer8' | 'bayer16' | 'floydSteinberg' | 'atkinson' | 'ordered';
-  colorLevels: number;
+  // VHS
+  vhsDistortion: number;
+  vhsNoise: number;
+  vhsColorBleed: number;
+  vhsScanlines: number;
+  vhsTrackingError: number;
+  
+  // Pixel Sort
+  pixelSortThreshold: number;
+  pixelSortDirection: number;
+  pixelSortMode: number;
+  pixelSortStreakLength: number;
+  pixelSortIntensity: number;
+  pixelSortRandomness: number;
+  pixelSortReverse: boolean;
+  
+  // Blur
+  blurRadius: number;
+  
+  // Contour
+  contourLevels: number;
+  contourLineThickness: number;
+  contourFillMode: number;
+  contourColorMode: number;
+  contourInvert: boolean;
+  contourLineColor: [number, number, number];
+  contourBgColor: [number, number, number];
+  
+  // Voronoi
+  voronoiCellSize: number;
+  voronoiEdgeWidth: number;
+  voronoiEdgeColor: number;
+  voronoiColorMode: number;
+  voronoiRandomize: number;
   
   // Matrix Rain
+  matrixRainCellSize: number;
+  matrixRainSpeed: number;
+  matrixRainTrailLength: number;
+  matrixRainColor: [number, number, number];
+  matrixRainBgOpacity: number;
+  matrixRainGlowIntensity: number;
+  matrixRainDirection: number;
+  matrixRainThreshold: number;
+  matrixRainSpacing: number;
+  
+  // Dithering
+  ditheringMethod: number;
+  ditheringColorLevels: number;
+  ditheringMatrixSize: number;
+  
+  // Matrix Rain (legacy - can remove if not used)
   rainSpeed: number;
   trailLength: number;
   rainColor: [number, number, number];
@@ -352,8 +399,43 @@ const defaultEffectSettings: EffectSettings = {
   noiseFieldType: 0,
   noiseFieldDistortOnly: false,
   noiseFieldAnimate: false,
-  ditheringMethod: 'bayer4',
-  colorLevels: 2,
+  vhsDistortion: 0.5,
+  vhsNoise: 0.3,
+  vhsColorBleed: 0.5,
+  vhsScanlines: 0.5,
+  vhsTrackingError: 0.3,
+  pixelSortThreshold: 0.5,
+  pixelSortDirection: 0,
+  pixelSortMode: 0,
+  pixelSortStreakLength: 50,
+  pixelSortIntensity: 1,
+  pixelSortRandomness: 0,
+  pixelSortReverse: false,
+  blurRadius: 5,
+  contourLevels: 8,
+  contourLineThickness: 1.5,
+  contourFillMode: 0,
+  contourColorMode: 0,
+  contourInvert: false,
+  contourLineColor: [0, 0, 0],
+  contourBgColor: [1, 1, 1],
+  voronoiCellSize: 30,
+  voronoiEdgeWidth: 0.5,
+  voronoiEdgeColor: 0,
+  voronoiColorMode: 0,
+  voronoiRandomize: 0.5,
+  matrixRainCellSize: 12,
+  matrixRainSpeed: 1,
+  matrixRainTrailLength: 15,
+  matrixRainColor: [0, 1, 0],
+  matrixRainBgOpacity: 0.3,
+  matrixRainGlowIntensity: 1,
+  matrixRainDirection: 0,
+  matrixRainThreshold: 0.1,
+  matrixRainSpacing: 0.1,
+  ditheringMethod: 0,
+  ditheringColorLevels: 2,
+  ditheringMatrixSize: 4,
   rainSpeed: 1,
   trailLength: 15,
   rainColor: [0, 1, 0],

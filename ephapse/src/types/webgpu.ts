@@ -30,6 +30,7 @@ export type EffectType =
   | 'matrixRain'
   | 'dots'
   | 'contour'
+  | 'blur'
   | 'pixelSort'
   | 'blockify'
   | 'threshold'

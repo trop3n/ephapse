@@ -170,6 +170,20 @@ export function SettingsPanel() {
   const effectNoiseFieldDistortOnly = useAppStore((state) => state.effectSettings.noiseFieldDistortOnly);
   const effectNoiseFieldAnimate = useAppStore((state) => state.effectSettings.noiseFieldAnimate);
   
+  const effectVhsDistortion = useAppStore((state) => state.effectSettings.vhsDistortion);
+  const effectVhsNoise = useAppStore((state) => state.effectSettings.vhsNoise);
+  const effectVhsColorBleed = useAppStore((state) => state.effectSettings.vhsColorBleed);
+  const effectVhsScanlines = useAppStore((state) => state.effectSettings.vhsScanlines);
+  const effectVhsTrackingError = useAppStore((state) => state.effectSettings.vhsTrackingError);
+  
+  const effectPixelSortThreshold = useAppStore((state) => state.effectSettings.pixelSortThreshold);
+  const effectPixelSortDirection = useAppStore((state) => state.effectSettings.pixelSortDirection);
+  const effectPixelSortMode = useAppStore((state) => state.effectSettings.pixelSortMode);
+  const effectPixelSortStreakLength = useAppStore((state) => state.effectSettings.pixelSortStreakLength);
+  const effectPixelSortIntensity = useAppStore((state) => state.effectSettings.pixelSortIntensity);
+  const effectPixelSortRandomness = useAppStore((state) => state.effectSettings.pixelSortRandomness);
+  const effectPixelSortReverse = useAppStore((state) => state.effectSettings.pixelSortReverse);
+  
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
   const updateCharacter = useAppStore((state) => state.updateCharacter);
@@ -681,6 +695,376 @@ export function SettingsPanel() {
               />
               <span className="text-sm">Animate</span>
             </label>
+          </div>
+        )}
+
+        {/* VHS Settings - only show when active */}
+        {activeEffect === 'vhs' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">VHS Settings</h3>
+            <Slider
+              label="Distortion"
+              value={effectVhsDistortion}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ vhsDistortion: v })}
+            />
+            <Slider
+              label="Noise"
+              value={effectVhsNoise}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ vhsNoise: v })}
+            />
+            <Slider
+              label="Color Bleed"
+              value={effectVhsColorBleed}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ vhsColorBleed: v })}
+            />
+            <Slider
+              label="Scanlines"
+              value={effectVhsScanlines}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ vhsScanlines: v })}
+            />
+            <Slider
+              label="Tracking Error"
+              value={effectVhsTrackingError}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ vhsTrackingError: v })}
+            />
+          </div>
+        )}
+
+        {/* Pixel Sort Settings - only show when active */}
+        {activeEffect === 'pixelSort' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Pixel Sort Settings</h3>
+            <Slider
+              label="Threshold"
+              value={effectPixelSortThreshold}
+              min={0.1}
+              max={0.9}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ pixelSortThreshold: v })}
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Direction</label>
+              <select
+                value={effectPixelSortDirection}
+                onChange={(e) => updateEffectSettings({ pixelSortDirection: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Horizontal</option>
+                <option value={1}>Vertical</option>
+                <option value={2}>Diagonal</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Mode</label>
+              <select
+                value={effectPixelSortMode}
+                onChange={(e) => updateEffectSettings({ pixelSortMode: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Black</option>
+                <option value={1}>White</option>
+                <option value={2}>Bright</option>
+                <option value={3}>Dark</option>
+              </select>
+            </div>
+            <Slider
+              label="Streak Length"
+              value={effectPixelSortStreakLength}
+              min={10}
+              max={100}
+              onChange={(v) => updateEffectSettings({ pixelSortStreakLength: v })}
+              suffix="px"
+            />
+            <Slider
+              label="Intensity"
+              value={effectPixelSortIntensity}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ pixelSortIntensity: v })}
+            />
+            <Slider
+              label="Randomness"
+              value={effectPixelSortRandomness}
+              min={0}
+              max={1}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ pixelSortRandomness: v })}
+            />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectPixelSortReverse}
+                onChange={(e) => updateEffectSettings({ pixelSortReverse: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Reverse Sort</span>
+            </label>
+          </div>
+        )}
+
+        {/* Blur Settings - only show when active */}
+        {activeEffect === 'blur' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Blur Settings</h3>
+            <Slider
+              label="Radius"
+              value={useAppStore((state) => state.effectSettings.blurRadius)}
+              min={1}
+              max={30}
+              onChange={(v) => updateEffectSettings({ blurRadius: v })}
+              suffix="px"
+            />
+          </div>
+        )}
+
+        {/* Contour Settings - only show when active */}
+        {activeEffect === 'contour' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Contour Settings</h3>
+            <Slider
+              label="Levels"
+              value={useAppStore((state) => state.effectSettings.contourLevels)}
+              min={2}
+              max={20}
+              onChange={(v) => updateEffectSettings({ contourLevels: v })}
+            />
+            <Slider
+              label="Line Thickness"
+              value={useAppStore((state) => state.effectSettings.contourLineThickness)}
+              min={0.5}
+              max={5}
+              step={0.5}
+              onChange={(v) => updateEffectSettings({ contourLineThickness: v })}
+              suffix="px"
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Fill Mode</label>
+              <select
+                value={useAppStore((state) => state.effectSettings.contourFillMode)}
+                onChange={(e) => updateEffectSettings({ contourFillMode: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Filled Bands</option>
+                <option value={1}>Lines Only</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
+              <select
+                value={useAppStore((state) => state.effectSettings.contourColorMode)}
+                onChange={(e) => updateEffectSettings({ contourColorMode: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Grayscale</option>
+                <option value={1}>Original Colors</option>
+                <option value={2}>Custom</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useAppStore((state) => state.effectSettings.contourInvert)}
+                onChange={(e) => updateEffectSettings({ contourInvert: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Invert</span>
+            </label>
+          </div>
+        )}
+
+        {/* Voronoi Settings - only show when active */}
+        {activeEffect === 'voronoi' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Voronoi Settings</h3>
+            <Slider
+              label="Cell Size"
+              value={useAppStore((state) => state.effectSettings.voronoiCellSize)}
+              min={10}
+              max={100}
+              onChange={(v) => updateEffectSettings({ voronoiCellSize: v })}
+              suffix="px"
+            />
+            <Slider
+              label="Edge Width"
+              value={useAppStore((state) => state.effectSettings.voronoiEdgeWidth)}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ voronoiEdgeWidth: v })}
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Edge Color</label>
+              <select
+                value={useAppStore((state) => state.effectSettings.voronoiEdgeColor)}
+                onChange={(e) => updateEffectSettings({ voronoiEdgeColor: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Black</option>
+                <option value={1}>White</option>
+                <option value={2}>Darkened Cell</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
+              <select
+                value={useAppStore((state) => state.effectSettings.voronoiColorMode)}
+                onChange={(e) => updateEffectSettings({ voronoiColorMode: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Cell Average</option>
+                <option value={1}>Center Sample</option>
+                <option value={2}>Gradient</option>
+              </select>
+            </div>
+            <Slider
+              label="Randomize"
+              value={useAppStore((state) => state.effectSettings.voronoiRandomize)}
+              min={0}
+              max={1}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ voronoiRandomize: v })}
+            />
+          </div>
+        )}
+
+        {/* Matrix Rain Settings - only show when active */}
+        {activeEffect === 'matrixRain' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Matrix Rain Settings</h3>
+            <Slider
+              label="Cell Size"
+              value={useAppStore((state) => state.effectSettings.matrixRainCellSize)}
+              min={4}
+              max={32}
+              onChange={(v) => updateEffectSettings({ matrixRainCellSize: v })}
+              suffix="px"
+            />
+            <Slider
+              label="Speed"
+              value={useAppStore((state) => state.effectSettings.matrixRainSpeed)}
+              min={0.5}
+              max={3}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ matrixRainSpeed: v })}
+            />
+            <Slider
+              label="Trail Length"
+              value={useAppStore((state) => state.effectSettings.matrixRainTrailLength)}
+              min={5}
+              max={30}
+              onChange={(v) => updateEffectSettings({ matrixRainTrailLength: v })}
+            />
+            <Slider
+              label="Background Opacity"
+              value={useAppStore((state) => state.effectSettings.matrixRainBgOpacity)}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ matrixRainBgOpacity: v })}
+            />
+            <Slider
+              label="Glow Intensity"
+              value={useAppStore((state) => state.effectSettings.matrixRainGlowIntensity)}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ matrixRainGlowIntensity: v })}
+            />
+            <Slider
+              label="Threshold"
+              value={useAppStore((state) => state.effectSettings.matrixRainThreshold)}
+              min={0}
+              max={0.5}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ matrixRainThreshold: v })}
+            />
+            <Slider
+              label="Spacing"
+              value={useAppStore((state) => state.effectSettings.matrixRainSpacing)}
+              min={0}
+              max={0.5}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ matrixRainSpacing: v })}
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Direction</label>
+              <select
+                value={useAppStore((state) => state.effectSettings.matrixRainDirection)}
+                onChange={(e) => updateEffectSettings({ matrixRainDirection: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Down</option>
+                <option value={1}>Up</option>
+                <option value={2}>Left</option>
+                <option value={3}>Right</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Rain Color</label>
+              <input
+                type="color"
+                value={`#${Math.round(useAppStore((state) => state.effectSettings.matrixRainColor)[0] * 255).toString(16).padStart(2, '0')}${Math.round(useAppStore((state) => state.effectSettings.matrixRainColor)[1] * 255).toString(16).padStart(2, '0')}${Math.round(useAppStore((state) => state.effectSettings.matrixRainColor)[2] * 255).toString(16).padStart(2, '0')}`}
+                onChange={(e) => {
+                  const hex = e.target.value.slice(1);
+                  const r = parseInt(hex.slice(0, 2), 16) / 255;
+                  const g = parseInt(hex.slice(2, 4), 16) / 255;
+                  const b = parseInt(hex.slice(4, 6), 16) / 255;
+                  updateEffectSettings({ matrixRainColor: [r, g, b] });
+                }}
+                className="w-full h-8 rounded cursor-pointer"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Dithering Settings - only show when active */}
+        {activeEffect === 'dithering' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Dithering Settings</h3>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Method</label>
+              <select
+                value={useAppStore((state) => state.effectSettings.ditheringMethod)}
+                onChange={(e) => updateEffectSettings({ ditheringMethod: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Bayer 2x2</option>
+                <option value={1}>Bayer 4x4</option>
+                <option value={2}>Bayer 8x8</option>
+                <option value={3}>None (Posterize)</option>
+              </select>
+            </div>
+            <Slider
+              label="Color Levels"
+              value={useAppStore((state) => state.effectSettings.ditheringColorLevels)}
+              min={2}
+              max={16}
+              onChange={(v) => updateEffectSettings({ ditheringColorLevels: v })}
+            />
+            <Slider
+              label="Matrix Size"
+              value={useAppStore((state) => state.effectSettings.ditheringMatrixSize)}
+              min={2}
+              max={8}
+              step={2}
+              onChange={(v) => updateEffectSettings({ ditheringMatrixSize: v })}
+            />
           </div>
         )}
 

@@ -9,6 +9,7 @@ const effects: { id: EffectType; name: string; description: string }[] = [
   { id: 'matrixRain', name: 'Matrix Rain', description: 'Digital rain effect' },
   { id: 'dots', name: 'Dots', description: 'Geometric dot patterns' },
   { id: 'contour', name: 'Contour', description: 'Line contour visualization' },
+  { id: 'blur', name: 'Blur', description: 'Gaussian blur effect' },
   { id: 'pixelSort', name: 'Pixel Sort', description: 'Glitch-style sorting' },
   { id: 'blockify', name: 'Blockify', description: 'Block/pixelate effect' },
   { id: 'threshold', name: 'Threshold', description: 'Binary level control' },
