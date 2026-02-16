@@ -51,5 +51,3 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   // This preserves color while extracting only bright areas
   return vec4f(color.rgb * brightness, 1.0);
 }
-
-  MS = `

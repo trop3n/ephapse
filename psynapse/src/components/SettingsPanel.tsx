@@ -100,11 +100,19 @@ export function SettingsPanel() {
   const postProcessingGrainEnabled = useAppStore((state) => state.postProcessing.grain.enabled);
   const postProcessingGrainIntensity = useAppStore((state) => state.postProcessing.grain.intensity);
   const postProcessingGrainSize = useAppStore((state) => state.postProcessing.grain.size);
+  const postProcessingGrainSpeed = useAppStore((state) => state.postProcessing.grain.speed);
+  const postProcessingChromaticEnabled = useAppStore((state) => state.postProcessing.chromatic.enabled);
+  const postProcessingChromaticOffset = useAppStore((state) => state.postProcessing.chromatic.offset);
   const postProcessingScanlinesEnabled = useAppStore((state) => state.postProcessing.scanlines.enabled);
   const postProcessingScanlinesOpacity = useAppStore((state) => state.postProcessing.scanlines.opacity);
+  const postProcessingScanlinesSpacing = useAppStore((state) => state.postProcessing.scanlines.spacing);
   const postProcessingVignetteEnabled = useAppStore((state) => state.postProcessing.vignette.enabled);
   const postProcessingVignetteIntensity = useAppStore((state) => state.postProcessing.vignette.intensity);
   const postProcessingVignetteRadius = useAppStore((state) => state.postProcessing.vignette.radius);
+  const postProcessingCrtEnabled = useAppStore((state) => state.postProcessing.crtCurve.enabled);
+  const postProcessingCrtAmount = useAppStore((state) => state.postProcessing.crtCurve.amount);
+  const postProcessingPhosphorEnabled = useAppStore((state) => state.postProcessing.phosphor.enabled);
+  const postProcessingPhosphorColor = useAppStore((state) => state.postProcessing.phosphor.color);
   
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
@@ -356,7 +364,7 @@ export function SettingsPanel() {
                 <input
                   type="checkbox"
                   checked={postProcessingGrainEnabled}
-                  onChange={(e) => updatePostProcessing({ grain: { enabled: e.target.checked, intensity: postProcessingGrainIntensity, size: postProcessingGrainSize, speed: 1 } })}
+                  onChange={(e) => updatePostProcessing({ grain: { enabled: e.target.checked, intensity: postProcessingGrainIntensity, size: postProcessingGrainSize, speed: postProcessingGrainSpeed } })}
                   className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
                 />
                 <span className="text-sm">Film Grain</span>
@@ -368,17 +376,48 @@ export function SettingsPanel() {
                     value={postProcessingGrainIntensity}
                     min={0}
                     max={100}
-                    onChange={(v) => updatePostProcessing({ grain: { enabled: true, intensity: v, size: postProcessingGrainSize, speed: 1 } })}
+                    onChange={(v) => updatePostProcessing({ grain: { enabled: true, intensity: v, size: postProcessingGrainSize, speed: postProcessingGrainSpeed } })}
                   />
                   <Slider
                     label="Size"
                     value={postProcessingGrainSize}
                     min={0.5}
-                    max={3}
+                    max={4}
                     step={0.5}
-                    onChange={(v) => updatePostProcessing({ grain: { enabled: true, intensity: postProcessingGrainIntensity, size: v, speed: 1 } })}
+                    onChange={(v) => updatePostProcessing({ grain: { enabled: true, intensity: postProcessingGrainIntensity, size: v, speed: postProcessingGrainSpeed } })}
+                  />
+                  <Slider
+                    label="Speed"
+                    value={postProcessingGrainSpeed}
+                    min={0}
+                    max={5}
+                    step={0.5}
+                    onChange={(v) => updatePostProcessing({ grain: { enabled: true, intensity: postProcessingGrainIntensity, size: postProcessingGrainSize, speed: v } })}
                   />
                 </>
+              )}
+            </div>
+
+            {/* Chromatic Aberration */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={postProcessingChromaticEnabled}
+                  onChange={(e) => updatePostProcessing({ chromatic: { enabled: e.target.checked, offset: postProcessingChromaticOffset } })}
+                  className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                />
+                <span className="text-sm">Chromatic Aberration</span>
+              </label>
+              {postProcessingChromaticEnabled && (
+                <Slider
+                  label="Offset"
+                  value={postProcessingChromaticOffset}
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  onChange={(v) => updatePostProcessing({ chromatic: { enabled: true, offset: v } })}
+                />
               )}
             </div>
 
@@ -388,20 +427,30 @@ export function SettingsPanel() {
                 <input
                   type="checkbox"
                   checked={postProcessingScanlinesEnabled}
-                  onChange={(e) => updatePostProcessing({ scanlines: { enabled: e.target.checked, opacity: postProcessingScanlinesOpacity, spacing: 4 } })}
+                  onChange={(e) => updatePostProcessing({ scanlines: { enabled: e.target.checked, opacity: postProcessingScanlinesOpacity, spacing: postProcessingScanlinesSpacing } })}
                   className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
                 />
                 <span className="text-sm">Scanlines</span>
               </label>
               {postProcessingScanlinesEnabled && (
-                <Slider
-                  label="Opacity"
-                  value={postProcessingScanlinesOpacity}
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  onChange={(v) => updatePostProcessing({ scanlines: { enabled: true, opacity: v, spacing: 4 } })}
-                />
+                <>
+                  <Slider
+                    label="Opacity"
+                    value={postProcessingScanlinesOpacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    onChange={(v) => updatePostProcessing({ scanlines: { enabled: true, opacity: v, spacing: postProcessingScanlinesSpacing } })}
+                  />
+                  <Slider
+                    label="Spacing"
+                    value={postProcessingScanlinesSpacing}
+                    min={1}
+                    max={8}
+                    step={1}
+                    onChange={(v) => updatePostProcessing({ scanlines: { enabled: true, opacity: postProcessingScanlinesOpacity, spacing: v } })}
+                  />
+                </>
               )}
             </div>
 
@@ -435,6 +484,67 @@ export function SettingsPanel() {
                     onChange={(v) => updatePostProcessing({ vignette: { enabled: true, intensity: postProcessingVignetteIntensity, radius: v } })}
                   />
                 </>
+              )}
+            </div>
+
+            {/* CRT */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={postProcessingCrtEnabled}
+                  onChange={(e) => updatePostProcessing({ crtCurve: { enabled: e.target.checked, amount: postProcessingCrtAmount } })}
+                  className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                />
+                <span className="text-sm">CRT Curve</span>
+              </label>
+              {postProcessingCrtEnabled && (
+                <Slider
+                  label="Amount"
+                  value={postProcessingCrtAmount}
+                  min={0}
+                  max={0.5}
+                  step={0.02}
+                  onChange={(v) => updatePostProcessing({ crtCurve: { enabled: true, amount: v } })}
+                />
+              )}
+            </div>
+
+            {/* Phosphor */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={postProcessingPhosphorEnabled}
+                  onChange={(e) => updatePostProcessing({ phosphor: { enabled: e.target.checked, color: postProcessingPhosphorColor } })}
+                  className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                />
+                <span className="text-sm">Phosphor Tint</span>
+              </label>
+              {postProcessingPhosphorEnabled && (
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-2">Color</label>
+                  <div className="flex gap-1">
+                    {['#00ff00', '#ff0000', '#00ffff', '#ff00ff', '#ffff00', '#ffffff'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          const r = parseInt(color.slice(1, 3), 16) / 255;
+                          const g = parseInt(color.slice(3, 5), 16) / 255;
+                          const b = parseInt(color.slice(5, 7), 16) / 255;
+                          updatePostProcessing({ phosphor: { enabled: true, color: [r, g, b] } });
+                        }}
+                        className={`w-6 h-6 rounded border-2 ${postProcessingPhosphorColor[0] === parseInt(color.slice(1, 3), 16) / 255 &&
+                          postProcessingPhosphorColor[1] === parseInt(color.slice(3, 5), 16) / 255 &&
+                          postProcessingPhosphorColor[2] === parseInt(color.slice(5, 7), 16) / 255
+                            ? 'border-white'
+                            : 'border-transparent'
+                          }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>

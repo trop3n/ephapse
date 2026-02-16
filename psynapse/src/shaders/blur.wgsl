@@ -76,5 +76,3 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
 
   return color / totalWeight;
 }
-
-  ta = `

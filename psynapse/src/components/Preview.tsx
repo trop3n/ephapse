@@ -4,25 +4,27 @@ import { useAppStore } from '../store/appStore';
 import { initWebGPU, setupCanvasContext, resizeCanvas } from '../utils/webgpu';
 import { generateFontAtlas, CHARSETS } from '../utils/fontAtlas';
 import { AsciiEffect } from '../effects/asciiEffect';
+import { PostProcessEffect } from '../effects/postProcessEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
 export function Preview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const webgpuRef = useRef<{ device: GPUDevice; context: GPUCanvasContext; format: GPUTextureFormat } | null>(null);
-  const effectRef = useRef<AsciiEffect | null>(null);
+  const asciiEffectRef = useRef<AsciiEffect | null>(null);
+  const postProcessRef = useRef<PostProcessEffect | null>(null);
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
+  const intermediateTextureRef = useRef<GPUTexture | null>(null);
   const animationRef = useRef<number>(0);
+  const timeRef = useRef<number>(0);
   const isActiveRef = useRef(true);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Individual selectors to prevent object creation on each render
+
   const zoom = useAppStore((state) => state.zoom);
   const setZoom = useAppStore((state) => state.setZoom);
   const inputSource = useAppStore((state) => state.inputSource);
-  
-  // Settings - use individual selectors
+
   const cellSize = useAppStore((state) => state.character.cellSize);
   const spacing = useAppStore((state) => state.character.spacing);
   const brightnessMapping = useAppStore((state) => state.character.brightnessMapping);
@@ -43,8 +45,15 @@ export function Preview() {
   const brightnessWeight = useAppStore((state) => state.advanced.brightnessWeight);
   const matchQuality = useAppStore((state) => state.advanced.matchQuality);
 
-  // Memoize settings object
-  const settings = useMemo(() => ({
+  const bloom = useAppStore((state) => state.postProcessing.bloom);
+  const grain = useAppStore((state) => state.postProcessing.grain);
+  const chromatic = useAppStore((state) => state.postProcessing.chromatic);
+  const scanlines = useAppStore((state) => state.postProcessing.scanlines);
+  const vignette = useAppStore((state) => state.postProcessing.vignette);
+  const crtCurve = useAppStore((state) => state.postProcessing.crtCurve);
+  const phosphor = useAppStore((state) => state.postProcessing.phosphor);
+
+  const asciiSettings = useMemo(() => ({
     cellSize,
     brightness,
     contrast,
@@ -71,7 +80,16 @@ export function Preview() {
     quantizeColors, brightnessWeight, matchQuality
   ]);
 
-  // Initialize WebGPU
+  const postProcessSettings = useMemo(() => ({
+    bloom: { enabled: bloom.enabled, intensity: bloom.intensity, threshold: 0.7, radius: 3 },
+    grain: { enabled: grain.enabled, intensity: grain.intensity, size: grain.size, speed: grain.speed },
+    chromatic: { enabled: chromatic.enabled, offset: chromatic.offset },
+    scanlines: { enabled: scanlines.enabled, opacity: scanlines.opacity, spacing: scanlines.spacing },
+    vignette: { enabled: vignette.enabled, intensity: vignette.intensity, radius: vignette.radius },
+    crt: { enabled: crtCurve.enabled, amount: crtCurve.amount },
+    phosphor: { enabled: phosphor.enabled, color: phosphor.color },
+  }), [bloom, grain, chromatic, scanlines, vignette, crtCurve, phosphor]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -83,7 +101,7 @@ export function Preview() {
       try {
         const result = await initWebGPU();
         if (!isActiveRef.current) return;
-        
+
         if (!result.supported) {
           setError(result.reason);
           return;
@@ -94,24 +112,25 @@ export function Preview() {
 
         webgpuRef.current = { device, context, format };
 
-        // Generate font atlas
         const fontAtlas = await generateFontAtlas(device, {
           charset: CHARSETS.MEDIUM,
           fontSize: 24,
           fontFamily: 'monospace',
           cols: 8,
         });
-        
+
         if (!isActiveRef.current) {
           fontAtlas.texture.destroy();
           return;
         }
-        
+
         fontAtlasRef.current = fontAtlas;
 
-        // Create ASCII effect
-        const effect = new AsciiEffect(device, format, fontAtlas);
-        effectRef.current = effect;
+        const asciiEffect = new AsciiEffect(device, format, fontAtlas);
+        asciiEffectRef.current = asciiEffect;
+
+        const postProcess = new PostProcessEffect(device, format);
+        postProcessRef.current = postProcess;
 
         resizeCanvas(canvas);
         setIsReady(true);
@@ -140,27 +159,26 @@ export function Preview() {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      effectRef.current?.destroy();
+      asciiEffectRef.current?.destroy();
+      postProcessRef.current?.destroy();
       sourceTextureRef.current?.destroy();
+      intermediateTextureRef.current?.destroy();
     };
   }, []);
 
-  // Create/update source texture when input changes
   useEffect(() => {
     const webgpu = webgpuRef.current;
     if (!webgpu || !inputSource) return;
 
-    // Clean up old texture
     if (sourceTextureRef.current) {
       sourceTextureRef.current.destroy();
     }
 
-    // Create new texture from input
     const texture = webgpu.device.createTexture({
       label: 'Source Texture',
       size: { width: inputSource.width, height: inputSource.height },
       format: 'rgba8unorm',
-      usage: 
+      usage:
         GPUTextureUsage.TEXTURE_BINDING |
         GPUTextureUsage.COPY_DST |
         GPUTextureUsage.RENDER_ATTACHMENT,
@@ -175,40 +193,108 @@ export function Preview() {
     sourceTextureRef.current = texture;
   }, [inputSource]);
 
-  // Update effect options when settings change
   useEffect(() => {
-    const effect = effectRef.current;
+    const effect = asciiEffectRef.current;
     if (!effect) return;
+    effect.updateOptions(asciiSettings);
+  }, [asciiSettings]);
 
-    effect.updateOptions(settings);
-  }, [settings]);
+  useEffect(() => {
+    const effect = postProcessRef.current;
+    if (!effect) return;
+    effect.updateOptions({ ...postProcessSettings, time: timeRef.current });
+  }, [postProcessSettings]);
 
-  // Render loop
   useEffect(() => {
     const webgpu = webgpuRef.current;
-    const effect = effectRef.current;
+    const asciiEffect = asciiEffectRef.current;
+    const postProcess = postProcessRef.current;
     const sourceTexture = sourceTextureRef.current;
-    
-    if (!webgpu || !effect || !sourceTexture) return;
+
+    if (!webgpu || !asciiEffect || !postProcess || !sourceTexture) return;
 
     const { context } = webgpu;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     isActiveRef.current = true;
-    
+
+    let lastTime = performance.now();
+
+    const ensureIntermediateTexture = (width: number, height: number) => {
+      if (
+        intermediateTextureRef.current &&
+        intermediateTextureRef.current.width === width &&
+        intermediateTextureRef.current.height === height
+      ) {
+        return intermediateTextureRef.current;
+      }
+
+      intermediateTextureRef.current?.destroy();
+
+      const texture = webgpu.device.createTexture({
+        label: 'Intermediate Texture',
+        size: { width, height },
+        format: webgpu.format,
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+      });
+
+      intermediateTextureRef.current = texture;
+      return texture;
+    };
+
+    const hasPostProcessing =
+      bloom.enabled ||
+      grain.enabled ||
+      chromatic.enabled ||
+      scanlines.enabled ||
+      vignette.enabled ||
+      crtCurve.enabled ||
+      phosphor.enabled;
+
     const render = () => {
       if (!isActiveRef.current) return;
-      
+
+      const now = performance.now();
+      const delta = (now - lastTime) / 1000;
+      lastTime = now;
+      timeRef.current += delta;
+
+      if (grain.enabled) {
+        postProcess?.updateOptions({ time: timeRef.current });
+      }
+
       try {
         const outputTexture = context.getCurrentTexture();
-        
-        effect.render(
-          sourceTexture,
-          outputTexture.createView(),
-          canvas.width,
-          canvas.height
-        );
+        const width = canvas.width;
+        const height = canvas.height;
+
+        if (hasPostProcessing) {
+          const intermediate = ensureIntermediateTexture(width, height);
+
+          asciiEffect.render(
+            sourceTexture,
+            intermediate.createView(),
+            width,
+            height
+          );
+
+          postProcess.render(
+            intermediate,
+            outputTexture.createView(),
+            width,
+            height
+          );
+        } else {
+          asciiEffect.render(
+            sourceTexture,
+            outputTexture.createView(),
+            width,
+            height
+          );
+        }
       } catch (err) {
         console.error('Render error:', err);
       }
@@ -224,11 +310,10 @@ export function Preview() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [inputSource, isReady]);
+  }, [inputSource, isReady, bloom.enabled, grain.enabled, chromatic.enabled, scanlines.enabled, vignette.enabled, crtCurve.enabled, phosphor.enabled]);
 
   return (
     <div className="flex-1 flex flex-col bg-[var(--bg-primary)] min-w-0">
-      {/* Toolbar */}
       <div className="h-10 flex items-center justify-between px-3 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
         <span className="text-sm font-medium">Preview</span>
         <div className="flex items-center gap-1">
@@ -257,7 +342,6 @@ export function Preview() {
         </div>
       </div>
 
-      {/* Canvas Container */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center">
         {error ? (
           <div className="text-center p-8 text-red-400">
@@ -286,7 +370,6 @@ export function Preview() {
         )}
       </div>
 
-      {/* Status Bar */}
       <div className="h-8 flex items-center justify-between px-3 border-t border-[var(--border)] bg-[var(--bg-secondary)] text-xs text-[var(--text-secondary)]">
         <div className="flex items-center gap-4">
           {inputSource && (
