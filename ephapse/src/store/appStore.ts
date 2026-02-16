@@ -163,6 +163,26 @@ interface EffectSettings {
   crosshatchForeground: [number, number, number];
   crosshatchBackground: [number, number, number];
   
+  // Wave Lines
+  waveLinesCount: number;
+  waveLinesAmplitude: number;
+  waveLinesFrequency: number;
+  waveLinesThickness: number;
+  waveLinesDirection: number;
+  waveLinesColorMode: number;
+  waveLinesAnimate: boolean;
+  waveLinesForeground: [number, number, number];
+  waveLinesBackground: [number, number, number];
+  
+  // Noise Field
+  noiseFieldScale: number;
+  noiseFieldIntensity: number;
+  noiseFieldSpeed: number;
+  noiseFieldOctaves: number;
+  noiseFieldType: number;
+  noiseFieldDistortOnly: boolean;
+  noiseFieldAnimate: boolean;
+  
   // Dithering
   ditheringMethod: 'bayer2' | 'bayer4' | 'bayer8' | 'bayer16' | 'floydSteinberg' | 'atkinson' | 'ordered';
   colorLevels: number;
@@ -316,6 +336,22 @@ const defaultEffectSettings: EffectSettings = {
   crosshatchRandomness: 0,
   crosshatchForeground: [0, 0, 0],
   crosshatchBackground: [1, 1, 1],
+  waveLinesCount: 50,
+  waveLinesAmplitude: 15,
+  waveLinesFrequency: 1.5,
+  waveLinesThickness: 0.5,
+  waveLinesDirection: 0,
+  waveLinesColorMode: 0,
+  waveLinesAnimate: false,
+  waveLinesForeground: [0, 0, 0],
+  waveLinesBackground: [1, 1, 1],
+  noiseFieldScale: 30,
+  noiseFieldIntensity: 1.5,
+  noiseFieldSpeed: 1,
+  noiseFieldOctaves: 4,
+  noiseFieldType: 0,
+  noiseFieldDistortOnly: false,
+  noiseFieldAnimate: false,
   ditheringMethod: 'bayer4',
   colorLevels: 2,
   rainSpeed: 1,

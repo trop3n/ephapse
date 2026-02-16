@@ -154,6 +154,22 @@ export function SettingsPanel() {
   const effectCrosshatchInvert = useAppStore((state) => state.effectSettings.crosshatchInvert);
   const effectCrosshatchRandomness = useAppStore((state) => state.effectSettings.crosshatchRandomness);
   
+  const effectWaveLinesCount = useAppStore((state) => state.effectSettings.waveLinesCount);
+  const effectWaveLinesAmplitude = useAppStore((state) => state.effectSettings.waveLinesAmplitude);
+  const effectWaveLinesFrequency = useAppStore((state) => state.effectSettings.waveLinesFrequency);
+  const effectWaveLinesThickness = useAppStore((state) => state.effectSettings.waveLinesThickness);
+  const effectWaveLinesDirection = useAppStore((state) => state.effectSettings.waveLinesDirection);
+  const effectWaveLinesColorMode = useAppStore((state) => state.effectSettings.waveLinesColorMode);
+  const effectWaveLinesAnimate = useAppStore((state) => state.effectSettings.waveLinesAnimate);
+  
+  const effectNoiseFieldScale = useAppStore((state) => state.effectSettings.noiseFieldScale);
+  const effectNoiseFieldIntensity = useAppStore((state) => state.effectSettings.noiseFieldIntensity);
+  const effectNoiseFieldSpeed = useAppStore((state) => state.effectSettings.noiseFieldSpeed);
+  const effectNoiseFieldOctaves = useAppStore((state) => state.effectSettings.noiseFieldOctaves);
+  const effectNoiseFieldType = useAppStore((state) => state.effectSettings.noiseFieldType);
+  const effectNoiseFieldDistortOnly = useAppStore((state) => state.effectSettings.noiseFieldDistortOnly);
+  const effectNoiseFieldAnimate = useAppStore((state) => state.effectSettings.noiseFieldAnimate);
+  
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
   const updateCharacter = useAppStore((state) => state.updateCharacter);
@@ -527,6 +543,143 @@ export function SettingsPanel() {
                 className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
               />
               <span className="text-sm">Invert</span>
+            </label>
+          </div>
+        )}
+
+        {/* Wave Lines Settings - only show when active */}
+        {activeEffect === 'waveLines' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Wave Lines Settings</h3>
+            <Slider
+              label="Line Count"
+              value={effectWaveLinesCount}
+              min={10}
+              max={150}
+              onChange={(v) => updateEffectSettings({ waveLinesCount: v })}
+            />
+            <Slider
+              label="Amplitude"
+              value={effectWaveLinesAmplitude}
+              min={1}
+              max={50}
+              onChange={(v) => updateEffectSettings({ waveLinesAmplitude: v })}
+              suffix="px"
+            />
+            <Slider
+              label="Frequency"
+              value={effectWaveLinesFrequency}
+              min={0.5}
+              max={5}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ waveLinesFrequency: v })}
+            />
+            <Slider
+              label="Line Thickness"
+              value={effectWaveLinesThickness}
+              min={0.2}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ waveLinesThickness: v })}
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Direction</label>
+              <select
+                value={effectWaveLinesDirection}
+                onChange={(e) => updateEffectSettings({ waveLinesDirection: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Horizontal</option>
+                <option value={1}>Vertical</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
+              <select
+                value={effectWaveLinesColorMode}
+                onChange={(e) => updateEffectSettings({ waveLinesColorMode: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Original Colors</option>
+                <option value={1}>Grayscale</option>
+                <option value={2}>Custom</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectWaveLinesAnimate}
+                onChange={(e) => updateEffectSettings({ waveLinesAnimate: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Animate</span>
+            </label>
+          </div>
+        )}
+
+        {/* Noise Field Settings - only show when active */}
+        {activeEffect === 'noiseField' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Noise Field Settings</h3>
+            <Slider
+              label="Scale"
+              value={effectNoiseFieldScale}
+              min={10}
+              max={100}
+              onChange={(v) => updateEffectSettings({ noiseFieldScale: v })}
+            />
+            <Slider
+              label="Intensity"
+              value={effectNoiseFieldIntensity}
+              min={0.5}
+              max={3}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ noiseFieldIntensity: v })}
+            />
+            <Slider
+              label="Speed"
+              value={effectNoiseFieldSpeed}
+              min={0.1}
+              max={3}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ noiseFieldSpeed: v })}
+            />
+            <Slider
+              label="Octaves"
+              value={effectNoiseFieldOctaves}
+              min={1}
+              max={6}
+              onChange={(v) => updateEffectSettings({ noiseFieldOctaves: v })}
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Noise Type</label>
+              <select
+                value={effectNoiseFieldType}
+                onChange={(e) => updateEffectSettings({ noiseFieldType: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Perlin</option>
+                <option value={1}>Simplex</option>
+                <option value={2}>Worley</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectNoiseFieldDistortOnly}
+                onChange={(e) => updateEffectSettings({ noiseFieldDistortOnly: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Distort Only</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectNoiseFieldAnimate}
+                onChange={(e) => updateEffectSettings({ noiseFieldAnimate: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Animate</span>
             </label>
           </div>
         )}

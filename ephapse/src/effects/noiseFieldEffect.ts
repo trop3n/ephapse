@@ -1,28 +1,38 @@
-struct VertexOutput {
-  @builtin(position) position: vec4f,
-  @location(0) texCoord: vec2f,
+/**
+ * Noise Field Effect - Flowing noise distortion
+ */
+
+import { SinglePassEffect } from './singlePassEffect';
+
+export interface NoiseFieldOptions {
+  resolution: [number, number];
+  brightness: number;
+  contrast: number;
+  scale: number;
+  intensity: number;
+  speed: number;
+  time: number;
+  octaves: number;
+  noiseType: number;
+  distortOnly: boolean;
+  animate: boolean;
 }
 
-@vertex
-fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-  var pos = array<vec2f, 3>(
-    vec2f(-1.0, -1.0),
-    vec2f(3.0, -1.0),
-    vec2f(-1.0, 3.0)
-  );
+const DEFAULT_OPTIONS: NoiseFieldOptions = {
+  resolution: [0, 0],
+  brightness: 0,
+  contrast: 0,
+  scale: 30,
+  intensity: 1.5,
+  speed: 1,
+  time: 0,
+  octaves: 4,
+  noiseType: 0,
+  distortOnly: false,
+  animate: false,
+};
 
-  var uv = array<vec2f, 3>(
-    vec2f(0.0, 1.0),
-    vec2f(2.0, 1.0),
-    vec2f(0.0, -1.0)
-  );
-
-  var output: VertexOutput;
-  output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
-  output.texCoord = uv[vertexIndex];
-  return output;
-}
-
+const FRAGMENT_SHADER = `
 struct NoiseFieldUniforms {
   resolution: vec2f,
   scale: f32,
@@ -157,4 +167,36 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   }
 
   return vec4f(clamp(color, vec3f(0.0), vec3f(1.0)), 1.0);
+}
+`;
+
+export class NoiseFieldEffect extends SinglePassEffect<NoiseFieldOptions> {
+  constructor(device: GPUDevice, format: GPUTextureFormat, options: Partial<NoiseFieldOptions> = {}) {
+    super(device, format, { ...DEFAULT_OPTIONS, ...options });
+  }
+  
+  protected getFragmentShader(): string {
+    return FRAGMENT_SHADER;
+  }
+  
+  protected getUniformBufferSize(): number {
+    return 44;
+  }
+  
+  protected writeUniforms(): void {
+    const data = new Float32Array(11);
+    data[0] = this.options.resolution[0];
+    data[1] = this.options.resolution[1];
+    data[2] = this.options.scale;
+    data[3] = this.options.intensity;
+    data[4] = this.options.speed;
+    data[5] = this.options.time;
+    data[6] = this.options.octaves;
+    data[7] = this.options.animate ? 1 : 0;
+    data[8] = this.options.brightness;
+    data[9] = this.options.contrast;
+    data[10] = this.options.noiseType;
+    
+    this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
+  }
 }

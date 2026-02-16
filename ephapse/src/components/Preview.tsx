@@ -11,6 +11,8 @@ import { HalftoneEffect } from '../effects/halftoneEffect';
 import { DotsEffect } from '../effects/dotsEffect';
 import { EdgeDetectionEffect } from '../effects/edgeDetectionEffect';
 import { CrosshatchEffect } from '../effects/crosshatchEffect';
+import { WaveLinesEffect } from '../effects/waveLinesEffect';
+import { NoiseFieldEffect } from '../effects/noiseFieldEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
 export function Preview() {
@@ -23,6 +25,8 @@ export function Preview() {
   const dotsEffectRef = useRef<DotsEffect | null>(null);
   const edgeDetectionRef = useRef<EdgeDetectionEffect | null>(null);
   const crosshatchRef = useRef<CrosshatchEffect | null>(null);
+  const waveLinesRef = useRef<WaveLinesEffect | null>(null);
+  const noiseFieldRef = useRef<NoiseFieldEffect | null>(null);
   const postProcessRef = useRef<PostProcessEffect | null>(null);
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
@@ -113,6 +117,24 @@ export function Preview() {
   const crosshatchRandomness = useAppStore((state) => state.effectSettings.crosshatchRandomness);
   const crosshatchForeground = useAppStore((state) => state.effectSettings.crosshatchForeground);
   const crosshatchBackground = useAppStore((state) => state.effectSettings.crosshatchBackground);
+
+  const waveLinesCount = useAppStore((state) => state.effectSettings.waveLinesCount);
+  const waveLinesAmplitude = useAppStore((state) => state.effectSettings.waveLinesAmplitude);
+  const waveLinesFrequency = useAppStore((state) => state.effectSettings.waveLinesFrequency);
+  const waveLinesThickness = useAppStore((state) => state.effectSettings.waveLinesThickness);
+  const waveLinesDirection = useAppStore((state) => state.effectSettings.waveLinesDirection);
+  const waveLinesColorMode = useAppStore((state) => state.effectSettings.waveLinesColorMode);
+  const waveLinesAnimate = useAppStore((state) => state.effectSettings.waveLinesAnimate);
+  const waveLinesForeground = useAppStore((state) => state.effectSettings.waveLinesForeground);
+  const waveLinesBackground = useAppStore((state) => state.effectSettings.waveLinesBackground);
+
+  const noiseFieldScale = useAppStore((state) => state.effectSettings.noiseFieldScale);
+  const noiseFieldIntensity = useAppStore((state) => state.effectSettings.noiseFieldIntensity);
+  const noiseFieldSpeed = useAppStore((state) => state.effectSettings.noiseFieldSpeed);
+  const noiseFieldOctaves = useAppStore((state) => state.effectSettings.noiseFieldOctaves);
+  const noiseFieldType = useAppStore((state) => state.effectSettings.noiseFieldType);
+  const noiseFieldDistortOnly = useAppStore((state) => state.effectSettings.noiseFieldDistortOnly);
+  const noiseFieldAnimate = useAppStore((state) => state.effectSettings.noiseFieldAnimate);
 
   const asciiSettings = useMemo(() => ({
     cellSize,
@@ -224,6 +246,34 @@ export function Preview() {
     contrast: 0,
   }), [crosshatchDensity, crosshatchAngle, crosshatchLayers, crosshatchLineWidth, crosshatchInvert, crosshatchRandomness, crosshatchForeground, crosshatchBackground]);
 
+  const waveLinesSettings = useMemo(() => ({
+    lineCount: waveLinesCount,
+    amplitude: waveLinesAmplitude,
+    frequency: waveLinesFrequency,
+    lineThickness: waveLinesThickness,
+    direction: waveLinesDirection,
+    colorMode: waveLinesColorMode,
+    animate: waveLinesAnimate,
+    foregroundColor: waveLinesForeground,
+    backgroundColor: waveLinesBackground,
+    brightness: 0,
+    contrast: 0,
+    time: 0,
+  }), [waveLinesCount, waveLinesAmplitude, waveLinesFrequency, waveLinesThickness, waveLinesDirection, waveLinesColorMode, waveLinesAnimate, waveLinesForeground, waveLinesBackground]);
+
+  const noiseFieldSettings = useMemo(() => ({
+    scale: noiseFieldScale,
+    intensity: noiseFieldIntensity,
+    speed: noiseFieldSpeed,
+    octaves: noiseFieldOctaves,
+    noiseType: noiseFieldType,
+    distortOnly: noiseFieldDistortOnly,
+    animate: noiseFieldAnimate,
+    brightness: 0,
+    contrast: 0,
+    time: 0,
+  }), [noiseFieldScale, noiseFieldIntensity, noiseFieldSpeed, noiseFieldOctaves, noiseFieldType, noiseFieldDistortOnly, noiseFieldAnimate]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -298,6 +348,12 @@ export function Preview() {
         const crosshatchEffect = new CrosshatchEffect(device, format);
         crosshatchRef.current = crosshatchEffect;
 
+        const waveLinesEffect = new WaveLinesEffect(device, format);
+        waveLinesRef.current = waveLinesEffect;
+
+        const noiseFieldEffect = new NoiseFieldEffect(device, format);
+        noiseFieldRef.current = noiseFieldEffect;
+
         const postProcess = new PostProcessEffect(device, format);
         postProcessRef.current = postProcess;
 
@@ -337,6 +393,8 @@ export function Preview() {
       dotsEffectRef.current?.destroy();
       edgeDetectionRef.current?.destroy();
       crosshatchRef.current?.destroy();
+      waveLinesRef.current?.destroy();
+      noiseFieldRef.current?.destroy();
       postProcessRef.current?.destroy();
       sourceTextureRef.current?.destroy();
       intermediateTextureRef.current?.destroy();
@@ -424,6 +482,18 @@ export function Preview() {
   }, [crosshatchSettings]);
 
   useEffect(() => {
+    const effect = waveLinesRef.current;
+    if (!effect) return;
+    effect.updateOptions({ ...waveLinesSettings, time: timeRef.current });
+  }, [waveLinesSettings]);
+
+  useEffect(() => {
+    const effect = noiseFieldRef.current;
+    if (!effect) return;
+    effect.updateOptions({ ...noiseFieldSettings, time: timeRef.current });
+  }, [noiseFieldSettings]);
+
+  useEffect(() => {
     const effect = postProcessRef.current;
     if (!effect) return;
     effect.updateOptions({ ...postProcessSettings, time: timeRef.current });
@@ -493,6 +563,10 @@ export function Preview() {
           return edgeDetectionRef.current;
         case 'crosshatch':
           return crosshatchRef.current;
+        case 'waveLines':
+          return waveLinesRef.current;
+        case 'noiseField':
+          return noiseFieldRef.current;
         case 'ascii':
         default:
           return asciiEffect;
@@ -515,6 +589,14 @@ export function Preview() {
 
       if (grain.enabled) {
         postProcess?.updateOptions({ time: timeRef.current });
+      }
+
+      if (waveLinesAnimate) {
+        waveLinesRef.current?.updateOptions({ time: timeRef.current });
+      }
+
+      if (noiseFieldAnimate) {
+        noiseFieldRef.current?.updateOptions({ time: timeRef.current });
       }
 
       try {
@@ -572,7 +654,7 @@ export function Preview() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isReady, activeEffect, bloom.enabled, grain.enabled, chromatic.enabled, scanlines.enabled, vignette.enabled, crtCurve.enabled, phosphor.enabled]);
+  }, [isReady, activeEffect, bloom.enabled, grain.enabled, chromatic.enabled, scanlines.enabled, vignette.enabled, crtCurve.enabled, phosphor.enabled, waveLinesAnimate, noiseFieldAnimate]);
 
   return (
     <div className="flex-1 flex flex-col bg-[var(--bg-primary)] min-w-0">
