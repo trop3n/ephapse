@@ -144,6 +144,25 @@ interface EffectSettings {
   dotsForeground: [number, number, number];
   dotsBackground: [number, number, number];
   
+  // Edge Detection
+  edgeThreshold: number;
+  edgeLineWidth: number;
+  edgeAlgorithm: number;
+  edgeInvert: boolean;
+  edgeColorMode: boolean;
+  edgeColor: [number, number, number];
+  edgeBgColor: [number, number, number];
+  
+  // Crosshatch
+  crosshatchDensity: number;
+  crosshatchAngle: number;
+  crosshatchLayers: number;
+  crosshatchLineWidth: number;
+  crosshatchInvert: boolean;
+  crosshatchRandomness: number;
+  crosshatchForeground: [number, number, number];
+  crosshatchBackground: [number, number, number];
+  
   // Dithering
   ditheringMethod: 'bayer2' | 'bayer4' | 'bayer8' | 'bayer16' | 'floydSteinberg' | 'atkinson' | 'ordered';
   colorLevels: number;
@@ -282,6 +301,21 @@ const defaultEffectSettings: EffectSettings = {
   dotsColorMode: 0,
   dotsForeground: [0, 0, 0],
   dotsBackground: [1, 1, 1],
+  edgeThreshold: 0.15,
+  edgeLineWidth: 1,
+  edgeAlgorithm: 0,
+  edgeInvert: false,
+  edgeColorMode: false,
+  edgeColor: [1, 1, 1],
+  edgeBgColor: [0, 0, 0],
+  crosshatchDensity: 6,
+  crosshatchAngle: 45,
+  crosshatchLayers: 4,
+  crosshatchLineWidth: 0.15,
+  crosshatchInvert: false,
+  crosshatchRandomness: 0,
+  crosshatchForeground: [0, 0, 0],
+  crosshatchBackground: [1, 1, 1],
   ditheringMethod: 'bayer4',
   colorLevels: 2,
   rainSpeed: 1,

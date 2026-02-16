@@ -1,28 +1,36 @@
-struct VertexOutput {
-  @builtin(position) position: vec4f,
-  @location(0) texCoord: vec2f,
+/**
+ * Edge Detection Effect - Sobel/Prewitt/Laplacian edge detection
+ */
+
+import { SinglePassEffect } from './singlePassEffect';
+
+export interface EdgeDetectionOptions {
+  resolution: [number, number];
+  brightness: number;
+  contrast: number;
+  threshold: number;
+  lineWidth: number;
+  algorithm: number;
+  invert: boolean;
+  colorMode: boolean;
+  edgeColor: [number, number, number];
+  bgColor: [number, number, number];
 }
 
-@vertex
-fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-  var pos = array<vec2f, 3>(
-    vec2f(-1.0, -1.0),
-    vec2f(3.0, -1.0),
-    vec2f(-1.0, 3.0)
-  );
+const DEFAULT_OPTIONS: EdgeDetectionOptions = {
+  resolution: [0, 0],
+  brightness: 0,
+  contrast: 0,
+  threshold: 0.15,
+  lineWidth: 1,
+  algorithm: 0,
+  invert: false,
+  colorMode: false,
+  edgeColor: [1, 1, 1],
+  bgColor: [0, 0, 0],
+};
 
-  var uv = array<vec2f, 3>(
-    vec2f(0.0, 1.0),
-    vec2f(2.0, 1.0),
-    vec2f(0.0, -1.0)
-  );
-
-  var output: VertexOutput;
-  output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
-  output.texCoord = uv[vertexIndex];
-  return output;
-}
-
+const FRAGMENT_SHADER = `
 struct EdgeUniforms {
   resolution: vec2f,
   threshold: f32,
@@ -135,4 +143,40 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let finalColor = select(customColorResult, originalColorResult, useOriginalColor);
 
   return vec4f(finalColor, 1.0);
+}
+`;
+
+export class EdgeDetectionEffect extends SinglePassEffect<EdgeDetectionOptions> {
+  constructor(device: GPUDevice, format: GPUTextureFormat, options: Partial<EdgeDetectionOptions> = {}) {
+    super(device, format, { ...DEFAULT_OPTIONS, ...options });
+  }
+  
+  protected getFragmentShader(): string {
+    return FRAGMENT_SHADER;
+  }
+  
+  protected getUniformBufferSize(): number {
+    return 64;
+  }
+  
+  protected writeUniforms(): void {
+    const data = new Float32Array(16);
+    data[0] = this.options.resolution[0];
+    data[1] = this.options.resolution[1];
+    data[2] = this.options.threshold;
+    data[3] = this.options.lineWidth;
+    data[4] = this.options.invert ? 1 : 0;
+    data[5] = this.options.algorithm;
+    data[6] = this.options.brightness;
+    data[7] = this.options.contrast;
+    data[8] = this.options.edgeColor[0];
+    data[9] = this.options.edgeColor[1];
+    data[10] = this.options.edgeColor[2];
+    data[11] = this.options.bgColor[0];
+    data[12] = this.options.bgColor[1];
+    data[13] = this.options.bgColor[2];
+    data[14] = this.options.colorMode ? 1 : 0;
+    
+    this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
+  }
 }

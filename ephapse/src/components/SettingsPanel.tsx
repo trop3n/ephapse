@@ -141,6 +141,19 @@ export function SettingsPanel() {
   const effectDotsInvert = useAppStore((state) => state.effectSettings.dotsInvert);
   const effectDotsColorMode = useAppStore((state) => state.effectSettings.dotsColorMode);
   
+  const effectEdgeThreshold = useAppStore((state) => state.effectSettings.edgeThreshold);
+  const effectEdgeLineWidth = useAppStore((state) => state.effectSettings.edgeLineWidth);
+  const effectEdgeAlgorithm = useAppStore((state) => state.effectSettings.edgeAlgorithm);
+  const effectEdgeInvert = useAppStore((state) => state.effectSettings.edgeInvert);
+  const effectEdgeColorMode = useAppStore((state) => state.effectSettings.edgeColorMode);
+  
+  const effectCrosshatchDensity = useAppStore((state) => state.effectSettings.crosshatchDensity);
+  const effectCrosshatchAngle = useAppStore((state) => state.effectSettings.crosshatchAngle);
+  const effectCrosshatchLayers = useAppStore((state) => state.effectSettings.crosshatchLayers);
+  const effectCrosshatchLineWidth = useAppStore((state) => state.effectSettings.crosshatchLineWidth);
+  const effectCrosshatchInvert = useAppStore((state) => state.effectSettings.crosshatchInvert);
+  const effectCrosshatchRandomness = useAppStore((state) => state.effectSettings.crosshatchRandomness);
+  
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
   const updateCharacter = useAppStore((state) => state.updateCharacter);
@@ -407,6 +420,114 @@ export function SettingsPanel() {
                 <option value={2}>Custom</option>
               </select>
             </div>
+          </div>
+        )}
+
+        {/* Edge Detection Settings - only show when active */}
+        {activeEffect === 'edgeDetection' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Edge Detection Settings</h3>
+            <Slider
+              label="Threshold"
+              value={effectEdgeThreshold}
+              min={0.05}
+              max={0.5}
+              step={0.01}
+              onChange={(v) => updateEffectSettings({ edgeThreshold: v })}
+            />
+            <Slider
+              label="Line Width"
+              value={effectEdgeLineWidth}
+              min={0.5}
+              max={4}
+              step={0.5}
+              onChange={(v) => updateEffectSettings({ edgeLineWidth: v })}
+              suffix="px"
+            />
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Algorithm</label>
+              <select
+                value={effectEdgeAlgorithm}
+                onChange={(e) => updateEffectSettings({ edgeAlgorithm: Number(e.target.value) })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value={0}>Sobel</option>
+                <option value={1}>Prewitt</option>
+                <option value={2}>Laplacian</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectEdgeInvert}
+                onChange={(e) => updateEffectSettings({ edgeInvert: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Invert</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectEdgeColorMode}
+                onChange={(e) => updateEffectSettings({ edgeColorMode: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Use Original Colors</span>
+            </label>
+          </div>
+        )}
+
+        {/* Crosshatch Settings - only show when active */}
+        {activeEffect === 'crosshatch' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">Crosshatch Settings</h3>
+            <Slider
+              label="Density"
+              value={effectCrosshatchDensity}
+              min={3}
+              max={12}
+              onChange={(v) => updateEffectSettings({ crosshatchDensity: v })}
+            />
+            <Slider
+              label="Angle"
+              value={effectCrosshatchAngle}
+              min={0}
+              max={90}
+              onChange={(v) => updateEffectSettings({ crosshatchAngle: v })}
+              suffix="°"
+            />
+            <Slider
+              label="Layers"
+              value={effectCrosshatchLayers}
+              min={1}
+              max={4}
+              onChange={(v) => updateEffectSettings({ crosshatchLayers: v })}
+            />
+            <Slider
+              label="Line Width"
+              value={effectCrosshatchLineWidth}
+              min={0.05}
+              max={0.3}
+              step={0.01}
+              onChange={(v) => updateEffectSettings({ crosshatchLineWidth: v })}
+            />
+            <Slider
+              label="Randomness"
+              value={effectCrosshatchRandomness}
+              min={0}
+              max={1}
+              step={0.1}
+              onChange={(v) => updateEffectSettings({ crosshatchRandomness: v })}
+            />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={effectCrosshatchInvert}
+                onChange={(e) => updateEffectSettings({ crosshatchInvert: e.target.checked })}
+                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              />
+              <span className="text-sm">Invert</span>
+            </label>
           </div>
         )}
 

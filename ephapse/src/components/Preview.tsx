@@ -9,6 +9,8 @@ import { BlockifyEffect } from '../effects/blockifyEffect';
 import { ThresholdEffect } from '../effects/thresholdEffect';
 import { HalftoneEffect } from '../effects/halftoneEffect';
 import { DotsEffect } from '../effects/dotsEffect';
+import { EdgeDetectionEffect } from '../effects/edgeDetectionEffect';
+import { CrosshatchEffect } from '../effects/crosshatchEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
 export function Preview() {
@@ -19,6 +21,8 @@ export function Preview() {
   const thresholdEffectRef = useRef<ThresholdEffect | null>(null);
   const halftoneEffectRef = useRef<HalftoneEffect | null>(null);
   const dotsEffectRef = useRef<DotsEffect | null>(null);
+  const edgeDetectionRef = useRef<EdgeDetectionEffect | null>(null);
+  const crosshatchRef = useRef<CrosshatchEffect | null>(null);
   const postProcessRef = useRef<PostProcessEffect | null>(null);
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
@@ -92,6 +96,23 @@ export function Preview() {
   const dotsColorMode = useAppStore((state) => state.effectSettings.dotsColorMode);
   const dotsForeground = useAppStore((state) => state.effectSettings.dotsForeground);
   const dotsBackground = useAppStore((state) => state.effectSettings.dotsBackground);
+
+  const edgeThreshold = useAppStore((state) => state.effectSettings.edgeThreshold);
+  const edgeLineWidth = useAppStore((state) => state.effectSettings.edgeLineWidth);
+  const edgeAlgorithm = useAppStore((state) => state.effectSettings.edgeAlgorithm);
+  const edgeInvert = useAppStore((state) => state.effectSettings.edgeInvert);
+  const edgeColorMode = useAppStore((state) => state.effectSettings.edgeColorMode);
+  const edgeColor = useAppStore((state) => state.effectSettings.edgeColor);
+  const edgeBgColor = useAppStore((state) => state.effectSettings.edgeBgColor);
+
+  const crosshatchDensity = useAppStore((state) => state.effectSettings.crosshatchDensity);
+  const crosshatchAngle = useAppStore((state) => state.effectSettings.crosshatchAngle);
+  const crosshatchLayers = useAppStore((state) => state.effectSettings.crosshatchLayers);
+  const crosshatchLineWidth = useAppStore((state) => state.effectSettings.crosshatchLineWidth);
+  const crosshatchInvert = useAppStore((state) => state.effectSettings.crosshatchInvert);
+  const crosshatchRandomness = useAppStore((state) => state.effectSettings.crosshatchRandomness);
+  const crosshatchForeground = useAppStore((state) => state.effectSettings.crosshatchForeground);
+  const crosshatchBackground = useAppStore((state) => state.effectSettings.crosshatchBackground);
 
   const asciiSettings = useMemo(() => ({
     cellSize,
@@ -178,6 +199,31 @@ export function Preview() {
     contrast: 0,
   }), [dotsSpacing, dotsSize, dotsShape, dotsGridType, dotsInvert, dotsColorMode, dotsForeground, dotsBackground]);
 
+  const edgeDetectionSettings = useMemo(() => ({
+    threshold: edgeThreshold,
+    lineWidth: edgeLineWidth,
+    algorithm: edgeAlgorithm,
+    invert: edgeInvert,
+    colorMode: edgeColorMode,
+    edgeColor: edgeColor,
+    bgColor: edgeBgColor,
+    brightness: 0,
+    contrast: 0,
+  }), [edgeThreshold, edgeLineWidth, edgeAlgorithm, edgeInvert, edgeColorMode, edgeColor, edgeBgColor]);
+
+  const crosshatchSettings = useMemo(() => ({
+    density: crosshatchDensity,
+    angle: crosshatchAngle,
+    layers: crosshatchLayers,
+    lineWidth: crosshatchLineWidth,
+    invert: crosshatchInvert,
+    randomness: crosshatchRandomness,
+    foregroundColor: crosshatchForeground,
+    backgroundColor: crosshatchBackground,
+    brightness: 0,
+    contrast: 0,
+  }), [crosshatchDensity, crosshatchAngle, crosshatchLayers, crosshatchLineWidth, crosshatchInvert, crosshatchRandomness, crosshatchForeground, crosshatchBackground]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -246,6 +292,12 @@ export function Preview() {
         const dotsEffect = new DotsEffect(device, format);
         dotsEffectRef.current = dotsEffect;
 
+        const edgeDetectionEffect = new EdgeDetectionEffect(device, format);
+        edgeDetectionRef.current = edgeDetectionEffect;
+
+        const crosshatchEffect = new CrosshatchEffect(device, format);
+        crosshatchRef.current = crosshatchEffect;
+
         const postProcess = new PostProcessEffect(device, format);
         postProcessRef.current = postProcess;
 
@@ -283,6 +335,8 @@ export function Preview() {
       thresholdEffectRef.current?.destroy();
       halftoneEffectRef.current?.destroy();
       dotsEffectRef.current?.destroy();
+      edgeDetectionRef.current?.destroy();
+      crosshatchRef.current?.destroy();
       postProcessRef.current?.destroy();
       sourceTextureRef.current?.destroy();
       intermediateTextureRef.current?.destroy();
@@ -358,6 +412,18 @@ export function Preview() {
   }, [dotsSettings]);
 
   useEffect(() => {
+    const effect = edgeDetectionRef.current;
+    if (!effect) return;
+    effect.updateOptions(edgeDetectionSettings);
+  }, [edgeDetectionSettings]);
+
+  useEffect(() => {
+    const effect = crosshatchRef.current;
+    if (!effect) return;
+    effect.updateOptions(crosshatchSettings);
+  }, [crosshatchSettings]);
+
+  useEffect(() => {
     const effect = postProcessRef.current;
     if (!effect) return;
     effect.updateOptions({ ...postProcessSettings, time: timeRef.current });
@@ -423,6 +489,10 @@ export function Preview() {
           return halftoneEffectRef.current;
         case 'dots':
           return dotsEffectRef.current;
+        case 'edgeDetection':
+          return edgeDetectionRef.current;
+        case 'crosshatch':
+          return crosshatchRef.current;
         case 'ascii':
         default:
           return asciiEffect;
