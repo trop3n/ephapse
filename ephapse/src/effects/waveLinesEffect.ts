@@ -134,11 +134,11 @@ export class WaveLinesEffect extends SinglePassEffect<WaveLinesOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 68;
+    return 72;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(17);
+    const data = new Float32Array(18);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.lineCount;
@@ -156,6 +156,7 @@ export class WaveLinesEffect extends SinglePassEffect<WaveLinesOptions> {
     data[14] = this.options.backgroundColor[0];
     data[15] = this.options.backgroundColor[1];
     data[16] = this.options.backgroundColor[2];
+    data[17] = this.options.animate ? 1 : 0;
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }

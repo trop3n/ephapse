@@ -180,11 +180,11 @@ export class NoiseFieldEffect extends SinglePassEffect<NoiseFieldOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 44;
+    return 48;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(11);
+    const data = new Float32Array(12);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.scale;
@@ -196,6 +196,7 @@ export class NoiseFieldEffect extends SinglePassEffect<NoiseFieldOptions> {
     data[8] = this.options.brightness;
     data[9] = this.options.contrast;
     data[10] = this.options.noiseType;
+    data[11] = this.options.distortOnly ? 1 : 0;
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }
