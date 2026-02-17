@@ -355,6 +355,12 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let satFactor = (uniforms.saturation + 100.0) * INV_100;
   let colorMode = i32(uniforms.imageColorMode + 0.5);
 
+  let backgroundColor = vec3f(uniforms.backgroundColorR, uniforms.backgroundColorG, uniforms.backgroundColorB);
+  
+  if (texCoord.x < 0.0 || texCoord.y < 0.0 || texCoord.x > 1.0 || texCoord.y > 1.0) {
+    return vec4f(backgroundColor, 1.0);
+  }
+
   let pixelPos = texCoord * uniforms.outputSize;
   let cellPos = floor(pixelPos * invCellSize);
   let cellUV = fract(pixelPos * invCellSize);
@@ -371,7 +377,7 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let remappedUV = (cellUV - halfGap) * invCharArea;
   let clampedCellUV = saturate(remappedUV);
 
-  let numCells = floor(uniforms.outputSize * invCellSize);
+  let numCells = max(floor(uniforms.outputSize * invCellSize), vec2f(1.0));
   let invNumCells = 1.0 / numCells;
 
   let sourceUV = (cellPos + 0.5) * invNumCells;
@@ -424,7 +430,12 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
     contrastFactor, satFactor, colorMode);
 
   let gridCols = u32(uniforms.gridCols);
-  let cellIndex = u32(cellPos.y) * gridCols + u32(cellPos.x);
+  let gridRows = u32(floor(uniforms.outputSize.y * invCellSize.y));
+  
+  let cellX = min(u32(cellPos.x), gridCols - 1u);
+  let cellY = min(u32(cellPos.y), max(gridRows - 1u, 0u));
+  
+  let cellIndex = cellY * gridCols + cellX;
   let charIndex = matchResult[cellIndex];
 
   let atlasColsU = u32(uniforms.atlasCols);
@@ -442,7 +453,6 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let customColor = vec3f(uniforms.customColorR, uniforms.customColorG, uniforms.customColorB);
   let finalColor = select(customColor, processedColor, uniforms.useOriginalColors > 0.5);
 
-  let backgroundColor = vec3f(uniforms.backgroundColorR, uniforms.backgroundColorG, uniforms.backgroundColorB);
   let outputColor = mix(backgroundColor, finalColor, charIntensity);
 
   return vec4f(outputColor, 1.0);
@@ -584,8 +594,8 @@ export class AsciiEffect {
     const sourceWidth = sourceTexture.width;
     const sourceHeight = sourceTexture.height;
     const cellSize = this.options.cellSize;
-    const gridCols = Math.floor(outputWidth / cellSize);
-    const gridRows = Math.floor(outputHeight / cellSize);
+    const gridCols = Math.max(1, Math.floor(outputWidth / cellSize));
+    const gridRows = Math.max(1, Math.floor(outputHeight / cellSize));
     
     this.updateMatchUniforms(sourceWidth, sourceHeight, gridCols, gridRows);
     this.updateAsciiUniforms(sourceWidth, sourceHeight, outputWidth, outputHeight, gridCols);

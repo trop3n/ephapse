@@ -152,11 +152,11 @@ export class VhsEffect extends SinglePassEffect<VhsOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 40;
+    return 48;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(10);
+    const data = new Float32Array(12);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.time;

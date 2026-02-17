@@ -265,11 +265,13 @@ export class PostProcessEffect {
   private blurUniformBuffer!: GPUBuffer;
   private postProcessUniformBuffer!: GPUBuffer;
 
-  private bloomThresholdTexture!: GPUTexture;
-  private bloomBlurHTarget!: GPUTexture;
-  private bloomBlurVTarget!: GPUTexture;
+  private bloomThresholdTexture: GPUTexture | null = null;
+  private bloomBlurHTarget: GPUTexture | null = null;
+  private bloomBlurVTarget: GPUTexture | null = null;
+  private dummyTexture: GPUTexture | null = null;
   private width: number = 0;
   private height: number = 0;
+  private bloomTexturesCreated: boolean = false;
 
   constructor(device: GPUDevice, format: GPUTextureFormat, options: Partial<PostProcessOptions> = {}) {
     this.device = device;
@@ -354,26 +356,43 @@ export class PostProcessEffect {
       size: 112,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
+
+    this.dummyTexture = this.device.createTexture({
+      label: 'Dummy Texture',
+      size: { width: 1, height: 1 },
+      format: this.format,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    this.device.queue.writeTexture(
+      { texture: this.dummyTexture },
+      new Uint8Array([0, 0, 0, 255]),
+      { bytesPerRow: 4 },
+      { width: 1, height: 1 }
+    );
   }
 
-  private ensureTextures(width: number, height: number) {
-    if (this.width === width && this.height === height) return;
+  private ensureTextures(width: number, height: number, needBloom: boolean) {
+    const sizeChanged = this.width !== width || this.height !== height;
 
-    this.bloomThresholdTexture?.destroy();
-    this.bloomBlurHTarget?.destroy();
-    this.bloomBlurVTarget?.destroy();
+    if (needBloom && (sizeChanged || !this.bloomTexturesCreated)) {
+      this.bloomThresholdTexture?.destroy();
+      this.bloomBlurHTarget?.destroy();
+      this.bloomBlurVTarget?.destroy();
 
-    const createTexture = (label: string) =>
-      this.device.createTexture({
-        label,
-        size: { width, height },
-        format: this.format,
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
-      });
+      const createTexture = (label: string) =>
+        this.device.createTexture({
+          label,
+          size: { width, height },
+          format: this.format,
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+        });
 
-    this.bloomThresholdTexture = createTexture('Bloom Threshold');
-    this.bloomBlurHTarget = createTexture('Bloom Blur H');
-    this.bloomBlurVTarget = createTexture('Bloom Blur V');
+      this.bloomThresholdTexture = createTexture('Bloom Threshold');
+      this.bloomBlurHTarget = createTexture('Bloom Blur H');
+      this.bloomBlurVTarget = createTexture('Bloom Blur V');
+      this.bloomTexturesCreated = true;
+    }
+
     this.width = width;
     this.height = height;
   }
@@ -384,10 +403,10 @@ export class PostProcessEffect {
     width: number,
     height: number
   ) {
-    this.ensureTextures(width, height);
-    const encoder = this.device.createCommandEncoder();
-
     const bloomEnabled = this.options.bloom.enabled && this.options.bloom.intensity > 0;
+
+    this.ensureTextures(width, height, bloomEnabled);
+    const encoder = this.device.createCommandEncoder();
 
     if (bloomEnabled) {
       this.renderBloomPass(encoder, inputTexture, width, height);
@@ -421,7 +440,7 @@ export class PostProcessEffect {
 
     const thresholdPass = encoder.beginRenderPass({
       colorAttachments: [{
-        view: this.bloomThresholdTexture.createView(),
+        view: this.bloomThresholdTexture!.createView(),
         clearValue: { r: 0, g: 0, b: 0, a: 1 },
         loadOp: 'clear',
         storeOp: 'store',
@@ -442,14 +461,14 @@ export class PostProcessEffect {
       layout: this.blurBindGroupLayout,
       entries: [
         { binding: 0, resource: this.sampler },
-        { binding: 1, resource: this.bloomThresholdTexture.createView() },
+        { binding: 1, resource: this.bloomThresholdTexture!.createView() },
         { binding: 2, resource: { buffer: this.blurUniformBuffer } },
       ],
     });
 
     const blurHPass = encoder.beginRenderPass({
       colorAttachments: [{
-        view: this.bloomBlurHTarget.createView(),
+        view: this.bloomBlurHTarget!.createView(),
         clearValue: { r: 0, g: 0, b: 0, a: 1 },
         loadOp: 'clear',
         storeOp: 'store',
@@ -470,14 +489,14 @@ export class PostProcessEffect {
       layout: this.blurBindGroupLayout,
       entries: [
         { binding: 0, resource: this.sampler },
-        { binding: 1, resource: this.bloomBlurHTarget.createView() },
+        { binding: 1, resource: this.bloomBlurHTarget!.createView() },
         { binding: 2, resource: { buffer: this.blurUniformBuffer } },
       ],
     });
 
     const blurVPass = encoder.beginRenderPass({
       colorAttachments: [{
-        view: this.bloomBlurVTarget.createView(),
+        view: this.bloomBlurVTarget!.createView(),
         clearValue: { r: 0, g: 0, b: 0, a: 1 },
         loadOp: 'clear',
         storeOp: 'store',
@@ -526,13 +545,17 @@ export class PostProcessEffect {
 
     this.device.queue.writeBuffer(this.postProcessUniformBuffer, 0, data);
 
+    const bloomTexture = bloomEnabled && this.bloomBlurVTarget 
+      ? this.bloomBlurVTarget 
+      : this.dummyTexture!;
+
     const bindGroup = this.device.createBindGroup({
       layout: this.postProcessBindGroupLayout,
       entries: [
         { binding: 0, resource: this.sampler },
         { binding: 1, resource: inputTexture.createView() },
         { binding: 2, resource: { buffer: this.postProcessUniformBuffer } },
-        { binding: 3, resource: this.bloomBlurVTarget.createView() },
+        { binding: 3, resource: bloomTexture.createView() },
       ],
     });
 
@@ -561,5 +584,6 @@ export class PostProcessEffect {
     this.bloomThresholdTexture?.destroy();
     this.bloomBlurHTarget?.destroy();
     this.bloomBlurVTarget?.destroy();
+    this.dummyTexture?.destroy();
   }
 }

@@ -151,19 +151,20 @@ export class VoronoiEffect extends SinglePassEffect<VoronoiOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 32;
+    return 48;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(8);
+    const data = new Float32Array(12);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.cellSize;
     data[3] = this.options.edgeWidth;
     data[4] = this.options.edgeColor;
     data[5] = this.options.colorMode;
-    data[6] = this.options.brightness * 0.005;
-    data[7] = this.options.contrast * 0.01;
+    data[6] = this.options.randomize;
+    data[7] = this.options.brightness * 0.005;
+    data[8] = this.options.contrast * 0.01;
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }

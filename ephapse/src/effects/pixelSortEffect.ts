@@ -48,12 +48,6 @@ struct PixelSortUniforms {
 @group(0) @binding(1) var inputTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uniforms: PixelSortUniforms;
 
-fn hash11(p: f32) -> f32 {
-  var p2 = fract(p * 0.1031);
-  p2 = p2 * (p2 + 33.33);
-  return fract(p2 * (p2 + p2));
-}
-
 fn luminance(c: vec3f) -> f32 {
   return dot(c, vec3f(0.299, 0.587, 0.114));
 }
@@ -69,6 +63,25 @@ fn applyBrightnessContrast(color: vec3f, brt: f32, contrast: f32) -> vec3f {
 fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let pixelSize = 1.0 / uniforms.resolution;
   let currentColor = textureSampleLevel(inputTexture, texSampler, texCoord, 0.0).rgb;
+  let currentLum = luminance(currentColor);
+
+  let thresholdValue = uniforms.threshold;
+  let modeInt = i32(uniforms.mode + 0.5);
+  
+  var shouldSort = false;
+  if (modeInt == 0) {
+    shouldSort = currentLum > thresholdValue * 0.3;
+  } else if (modeInt == 1) {
+    shouldSort = currentLum < 1.0 - thresholdValue * 0.3;
+  } else if (modeInt == 2) {
+    shouldSort = currentLum > thresholdValue;
+  } else {
+    shouldSort = currentLum < thresholdValue;
+  }
+
+  if (!shouldSort) {
+    return vec4f(applyBrightnessContrast(currentColor, uniforms.brightness * 0.005, uniforms.contrast * 0.01), 1.0);
+  }
 
   var dir: vec2f;
   if (uniforms.direction > 1.5) {
@@ -79,70 +92,27 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
     dir = vec2f(1.0, 0.0);
   }
 
-  let maxSamples = min(i32(uniforms.streakLength), 16);
-  let halfSamples = maxSamples / 2;
+  let sampleCount = min(i32(uniforms.streakLength), 32);
+  let halfRange = sampleCount / 2;
 
-  var colors: array<vec3f, 16>;
-  var lumValues: array<f32, 16>;
+  var sumColor = vec3f(0.0);
+  var count = 0;
 
-  for (var i = 0; i < 16; i++) {
-    colors[i] = currentColor;
-    lumValues[i] = luminance(currentColor);
-  }
-
-  var validCount = 0;
-  for (var i = -halfSamples; i <= halfSamples; i++) {
+  for (var i = -halfRange; i <= halfRange; i++) {
     let offset = dir * pixelSize * f32(i);
     let sampleUV = clamp(texCoord + offset, vec2f(0.0), vec2f(1.0));
     let color = textureSampleLevel(inputTexture, texSampler, sampleUV, 0.0).rgb;
-    let lum = luminance(color);
-
-    let modeInt = i32(uniforms.mode + 0.5);
-    var include = true;
-
-    if (modeInt == 0) {
-      include = lum > uniforms.threshold * 0.3;
-    } else if (modeInt == 1) {
-      include = lum < 1.0 - uniforms.threshold * 0.3;
-    } else if (modeInt == 2) {
-      include = lum > uniforms.threshold;
-    } else {
-      include = lum < uniforms.threshold;
-    }
-
-    if (include && validCount < 16) {
-      colors[validCount] = color;
-      lumValues[validCount] = lum;
-      validCount = validCount + 1;
-    }
+    sumColor = sumColor + color;
+    count = count + 1;
   }
 
-  if (validCount < 2) {
-    return vec4f(applyBrightnessContrast(currentColor, uniforms.brightness * 0.005, uniforms.contrast * 0.01), 1.0);
+  let avgColor = sumColor / f32(count);
+  
+  var sortedColor = avgColor;
+  if (uniforms.reverse > 0.5) {
+    sortedColor = vec3f(1.0) - avgColor;
   }
 
-  for (var pass = 0; pass < validCount - 1; pass++) {
-    for (var i = 0; i < validCount - 1 - pass; i++) {
-      let shouldSwap = select(
-        lumValues[i] > lumValues[i + 1],
-        lumValues[i] < lumValues[i + 1],
-        uniforms.reverse > 0.5
-      );
-
-      if (shouldSwap) {
-        let tmpColor = colors[i];
-        colors[i] = colors[i + 1];
-        colors[i + 1] = tmpColor;
-
-        let tmpLum = lumValues[i];
-        lumValues[i] = lumValues[i + 1];
-        lumValues[i + 1] = tmpLum;
-      }
-    }
-  }
-
-  let centerIdx = validCount / 2;
-  let sortedColor = colors[centerIdx];
   let finalColor = mix(currentColor, sortedColor, uniforms.intensity);
 
   return vec4f(applyBrightnessContrast(finalColor, uniforms.brightness * 0.005, uniforms.contrast * 0.01), 1.0);
@@ -159,11 +129,11 @@ export class PixelSortEffect extends SinglePassEffect<PixelSortOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 44;
+    return 48;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(11);
+    const data = new Float32Array(12);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.threshold;
