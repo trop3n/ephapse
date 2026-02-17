@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { InputPanel } from './components/InputPanel';
 import { EffectsPanel } from './components/EffectsPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { Preview } from './components/Preview';
+import type { PreviewExportHandle } from './components/Preview';
+import { ExportModal } from './components/ExportModal';
 import { useTheme } from './hooks/useTheme';
 import './index.css';
 
 function App() {
-  // Initialize theme
+  const previewRef = useRef<PreviewExportHandle>(null);
+  
   useTheme();
 
   // Prevent drag and drop on the whole app (except input panel)
@@ -44,11 +47,16 @@ function App() {
         </div>
 
         {/* Center - Preview */}
-        <Preview />
+        <Preview ref={previewRef} />
 
         {/* Right Sidebar - Settings */}
         <SettingsPanel />
       </main>
+
+      <ExportModal
+        onExportPNG={() => previewRef.current?.exportPNG() || Promise.resolve()}
+        onExportVideo={(duration) => previewRef.current?.exportVideo(duration) || Promise.resolve()}
+      />
     </div>
   );
 }

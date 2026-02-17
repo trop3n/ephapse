@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { initWebGPU, setupCanvasContext } from '../utils/webgpu';
 import { generateFontAtlas, CHARSETS } from '../utils/fontAtlas';
+import { captureCanvas, downloadBlob } from '../utils/export';
 import { AsciiEffect } from '../effects/asciiEffect';
 import { PostProcessEffect } from '../effects/postProcessEffect';
 import { BlockifyEffect } from '../effects/blockifyEffect';
@@ -22,7 +23,12 @@ import { MatrixRainEffect } from '../effects/matrixRainEffect';
 import { DitheringEffect } from '../effects/ditheringEffect';
 import type { FontAtlas } from '../utils/fontAtlas';
 
-export function Preview() {
+export interface PreviewExportHandle {
+  exportPNG: () => Promise<void>;
+  exportVideo: (duration: number) => Promise<void>;
+}
+
+export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const webgpuRef = useRef<{ device: GPUDevice; context: GPUCanvasContext; format: GPUTextureFormat } | null>(null);
   const asciiEffectRef = useRef<AsciiEffect | null>(null);
@@ -876,6 +882,90 @@ export function Preview() {
     };
   }, [isReady, activeEffect, bloom.enabled, grain.enabled, chromatic.enabled, scanlines.enabled, vignette.enabled, crtCurve.enabled, phosphor.enabled, waveLinesAnimate, noiseFieldAnimate]);
 
+  const exportPNG = useCallback(async () => {
+    const canvas = canvasRef.current;
+    const webgpu = webgpuRef.current;
+    const sourceTexture = sourceTextureRef.current;
+
+    if (!canvas || !webgpu || !sourceTexture) {
+      throw new Error('No image loaded');
+    }
+
+    const blob = await captureCanvas(
+      canvas,
+      webgpu.device,
+      sourceTexture,
+      sourceTexture.width,
+      sourceTexture.height
+    );
+
+    if (!blob) {
+      throw new Error('Failed to capture image');
+    }
+
+    const filename = `ephapse-${activeEffect || 'export'}-${Date.now()}.png`;
+    downloadBlob(blob, filename);
+  }, [activeEffect]);
+
+  const exportVideo = useCallback(async (duration: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      throw new Error('No canvas available');
+    }
+
+    const stream = canvas.captureStream(30);
+    const mimeTypes = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm',
+    ];
+
+    let mimeType = '';
+    for (const type of mimeTypes) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        mimeType = type;
+        break;
+      }
+    }
+
+    if (!mimeType) {
+      throw new Error('Video recording not supported');
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const chunks: Blob[] = [];
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 8000000,
+      });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        const filename = `ephapse-${activeEffect || 'export'}-${Date.now()}.webm`;
+        downloadBlob(blob, filename);
+        resolve();
+      };
+
+      mediaRecorder.onerror = () => {
+        reject(new Error('Recording failed'));
+      };
+
+      mediaRecorder.start();
+      setTimeout(() => mediaRecorder.stop(), duration * 1000);
+    });
+  }, [activeEffect]);
+
+  useImperativeHandle(ref, () => ({
+    exportPNG,
+    exportVideo,
+  }), [exportPNG, exportVideo]);
+
   return (
     <div className="flex-1 flex flex-col bg-[var(--bg-primary)] min-w-0">
       <div className="h-10 flex items-center justify-between px-3 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
@@ -956,4 +1046,4 @@ export function Preview() {
       </div>
     </div>
   );
-}
+});

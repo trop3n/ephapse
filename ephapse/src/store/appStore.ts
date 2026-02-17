@@ -269,6 +269,7 @@ interface AppState {
   zoom: number;
   isFullscreen: boolean;
   theme: 'dark' | 'light';
+  showExportModal: boolean;
   
   // Actions
   setInput: (type: InputType | null, source: HTMLImageElement | HTMLVideoElement | ImageBitmap | null, width: number, height: number) => void;
@@ -292,6 +293,7 @@ interface AppState {
   setZoom: (zoom: number) => void;
   toggleFullscreen: () => void;
   toggleTheme: () => void;
+  setShowExportModal: (show: boolean) => void;
   
   resetSettings: () => void;
 }
@@ -484,6 +486,7 @@ export const useAppStore = create<AppState>()(
       sidebarCollapsed: false,
       zoom: 1,
       isFullscreen: false,
+      showExportModal: false,
       theme: 'dark',
       
       // Actions
@@ -571,6 +574,8 @@ export const useAppStore = create<AppState>()(
       },
       
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+      
+      setShowExportModal: (show) => set({ showExportModal: show }),
       
       resetSettings: () =>
         set({
