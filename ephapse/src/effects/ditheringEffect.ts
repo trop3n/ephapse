@@ -97,7 +97,7 @@ fn quantizeChannel(value: f32, levels: f32) -> f32 {
 @fragment
 fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   var color = textureSample(inputTexture, texSampler, texCoord).rgb;
-  color = applyBrightnessContrast(color, uniforms.brightness * 0.005, uniforms.contrast * 0.01);
+  color = applyBrightnessContrast(color, uniforms.brightness, uniforms.contrast);
 
   let pixelCoord = texCoord * uniforms.resolution;
   let methodInt = i32(uniforms.method + 0.5);
@@ -136,21 +136,19 @@ export class DitheringEffect extends SinglePassEffect<DitheringOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 24;
+    return 32;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(6);
+    const data = new Float32Array(7);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.method;
     data[3] = this.options.colorLevels;
     data[4] = this.options.matrixSize;
-    data[5] = 0;
+    data[5] = this.options.brightness * 0.005;
+    data[6] = this.options.contrast * 0.01;
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
-    
-    const bcData = new Float32Array([this.options.brightness * 0.005, this.options.contrast * 0.01]);
-    this.device.queue.writeBuffer(this.uniformBuffer, 20, bcData);
   }
 }

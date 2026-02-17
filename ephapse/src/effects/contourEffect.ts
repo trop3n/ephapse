@@ -132,11 +132,11 @@ export class ContourEffect extends SinglePassEffect<ContourOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 56;
+    return 64;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(14);
+    const data = new Float32Array(16);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.levels;
@@ -151,10 +151,8 @@ export class ContourEffect extends SinglePassEffect<ContourOptions> {
     data[11] = this.options.bgColor[1];
     data[12] = this.options.bgColor[2];
     data[13] = this.options.colorMode;
+    data[14] = this.options.invert ? 1 : 0;
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
-    
-    const invertData = new Float32Array([this.options.invert ? 1 : 0]);
-    this.device.queue.writeBuffer(this.uniformBuffer, 52, invertData);
   }
 }

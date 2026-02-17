@@ -184,6 +184,34 @@ export function SettingsPanel() {
   const effectPixelSortRandomness = useAppStore((state) => state.effectSettings.pixelSortRandomness);
   const effectPixelSortReverse = useAppStore((state) => state.effectSettings.pixelSortReverse);
   
+  const effectBlurRadius = useAppStore((state) => state.effectSettings.blurRadius);
+  
+  const effectContourLevels = useAppStore((state) => state.effectSettings.contourLevels);
+  const effectContourLineThickness = useAppStore((state) => state.effectSettings.contourLineThickness);
+  const effectContourFillMode = useAppStore((state) => state.effectSettings.contourFillMode);
+  const effectContourColorMode = useAppStore((state) => state.effectSettings.contourColorMode);
+  const effectContourInvert = useAppStore((state) => state.effectSettings.contourInvert);
+  
+  const effectVoronoiCellSize = useAppStore((state) => state.effectSettings.voronoiCellSize);
+  const effectVoronoiEdgeWidth = useAppStore((state) => state.effectSettings.voronoiEdgeWidth);
+  const effectVoronoiEdgeColor = useAppStore((state) => state.effectSettings.voronoiEdgeColor);
+  const effectVoronoiColorMode = useAppStore((state) => state.effectSettings.voronoiColorMode);
+  const effectVoronoiRandomize = useAppStore((state) => state.effectSettings.voronoiRandomize);
+  
+  const effectMatrixRainCellSize = useAppStore((state) => state.effectSettings.matrixRainCellSize);
+  const effectMatrixRainSpeed = useAppStore((state) => state.effectSettings.matrixRainSpeed);
+  const effectMatrixRainTrailLength = useAppStore((state) => state.effectSettings.matrixRainTrailLength);
+  const effectMatrixRainColor = useAppStore((state) => state.effectSettings.matrixRainColor);
+  const effectMatrixRainBgOpacity = useAppStore((state) => state.effectSettings.matrixRainBgOpacity);
+  const effectMatrixRainGlowIntensity = useAppStore((state) => state.effectSettings.matrixRainGlowIntensity);
+  const effectMatrixRainDirection = useAppStore((state) => state.effectSettings.matrixRainDirection);
+  const effectMatrixRainThreshold = useAppStore((state) => state.effectSettings.matrixRainThreshold);
+  const effectMatrixRainSpacing = useAppStore((state) => state.effectSettings.matrixRainSpacing);
+  
+  const effectDitheringMethod = useAppStore((state) => state.effectSettings.ditheringMethod);
+  const effectDitheringColorLevels = useAppStore((state) => state.effectSettings.ditheringColorLevels);
+  const effectDitheringMatrixSize = useAppStore((state) => state.effectSettings.ditheringMatrixSize);
+  
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
   const updateCharacter = useAppStore((state) => state.updateCharacter);
@@ -824,7 +852,7 @@ export function SettingsPanel() {
             <h3 className="text-sm font-medium text-[var(--accent)]">Blur Settings</h3>
             <Slider
               label="Radius"
-              value={useAppStore((state) => state.effectSettings.blurRadius)}
+              value={effectBlurRadius}
               min={1}
               max={30}
               onChange={(v) => updateEffectSettings({ blurRadius: v })}
@@ -839,14 +867,14 @@ export function SettingsPanel() {
             <h3 className="text-sm font-medium text-[var(--accent)]">Contour Settings</h3>
             <Slider
               label="Levels"
-              value={useAppStore((state) => state.effectSettings.contourLevels)}
+              value={effectContourLevels}
               min={2}
               max={20}
               onChange={(v) => updateEffectSettings({ contourLevels: v })}
             />
             <Slider
               label="Line Thickness"
-              value={useAppStore((state) => state.effectSettings.contourLineThickness)}
+              value={effectContourLineThickness}
               min={0.5}
               max={5}
               step={0.5}
@@ -856,7 +884,7 @@ export function SettingsPanel() {
             <div>
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Fill Mode</label>
               <select
-                value={useAppStore((state) => state.effectSettings.contourFillMode)}
+                value={effectContourFillMode}
                 onChange={(e) => updateEffectSettings({ contourFillMode: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
@@ -867,7 +895,7 @@ export function SettingsPanel() {
             <div>
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
               <select
-                value={useAppStore((state) => state.effectSettings.contourColorMode)}
+                value={effectContourColorMode}
                 onChange={(e) => updateEffectSettings({ contourColorMode: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
@@ -879,7 +907,7 @@ export function SettingsPanel() {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={useAppStore((state) => state.effectSettings.contourInvert)}
+                checked={effectContourInvert}
                 onChange={(e) => updateEffectSettings({ contourInvert: e.target.checked })}
                 className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
               />
@@ -894,7 +922,7 @@ export function SettingsPanel() {
             <h3 className="text-sm font-medium text-[var(--accent)]">Voronoi Settings</h3>
             <Slider
               label="Cell Size"
-              value={useAppStore((state) => state.effectSettings.voronoiCellSize)}
+              value={effectVoronoiCellSize}
               min={10}
               max={100}
               onChange={(v) => updateEffectSettings({ voronoiCellSize: v })}
@@ -902,7 +930,7 @@ export function SettingsPanel() {
             />
             <Slider
               label="Edge Width"
-              value={useAppStore((state) => state.effectSettings.voronoiEdgeWidth)}
+              value={effectVoronoiEdgeWidth}
               min={0}
               max={2}
               step={0.1}
@@ -911,7 +939,7 @@ export function SettingsPanel() {
             <div>
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Edge Color</label>
               <select
-                value={useAppStore((state) => state.effectSettings.voronoiEdgeColor)}
+                value={effectVoronoiEdgeColor}
                 onChange={(e) => updateEffectSettings({ voronoiEdgeColor: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
@@ -923,7 +951,7 @@ export function SettingsPanel() {
             <div>
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
               <select
-                value={useAppStore((state) => state.effectSettings.voronoiColorMode)}
+                value={effectVoronoiColorMode}
                 onChange={(e) => updateEffectSettings({ voronoiColorMode: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
@@ -934,7 +962,7 @@ export function SettingsPanel() {
             </div>
             <Slider
               label="Randomize"
-              value={useAppStore((state) => state.effectSettings.voronoiRandomize)}
+              value={effectVoronoiRandomize}
               min={0}
               max={1}
               step={0.1}
@@ -949,7 +977,7 @@ export function SettingsPanel() {
             <h3 className="text-sm font-medium text-[var(--accent)]">Matrix Rain Settings</h3>
             <Slider
               label="Cell Size"
-              value={useAppStore((state) => state.effectSettings.matrixRainCellSize)}
+              value={effectMatrixRainCellSize}
               min={4}
               max={32}
               onChange={(v) => updateEffectSettings({ matrixRainCellSize: v })}
@@ -957,7 +985,7 @@ export function SettingsPanel() {
             />
             <Slider
               label="Speed"
-              value={useAppStore((state) => state.effectSettings.matrixRainSpeed)}
+              value={effectMatrixRainSpeed}
               min={0.5}
               max={3}
               step={0.1}
@@ -965,14 +993,14 @@ export function SettingsPanel() {
             />
             <Slider
               label="Trail Length"
-              value={useAppStore((state) => state.effectSettings.matrixRainTrailLength)}
+              value={effectMatrixRainTrailLength}
               min={5}
               max={30}
               onChange={(v) => updateEffectSettings({ matrixRainTrailLength: v })}
             />
             <Slider
               label="Background Opacity"
-              value={useAppStore((state) => state.effectSettings.matrixRainBgOpacity)}
+              value={effectMatrixRainBgOpacity}
               min={0}
               max={1}
               step={0.05}
@@ -980,7 +1008,7 @@ export function SettingsPanel() {
             />
             <Slider
               label="Glow Intensity"
-              value={useAppStore((state) => state.effectSettings.matrixRainGlowIntensity)}
+              value={effectMatrixRainGlowIntensity}
               min={0}
               max={2}
               step={0.1}
@@ -988,7 +1016,7 @@ export function SettingsPanel() {
             />
             <Slider
               label="Threshold"
-              value={useAppStore((state) => state.effectSettings.matrixRainThreshold)}
+              value={effectMatrixRainThreshold}
               min={0}
               max={0.5}
               step={0.05}
@@ -996,7 +1024,7 @@ export function SettingsPanel() {
             />
             <Slider
               label="Spacing"
-              value={useAppStore((state) => state.effectSettings.matrixRainSpacing)}
+              value={effectMatrixRainSpacing}
               min={0}
               max={0.5}
               step={0.05}
@@ -1005,7 +1033,7 @@ export function SettingsPanel() {
             <div>
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Direction</label>
               <select
-                value={useAppStore((state) => state.effectSettings.matrixRainDirection)}
+                value={effectMatrixRainDirection}
                 onChange={(e) => updateEffectSettings({ matrixRainDirection: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
@@ -1019,7 +1047,7 @@ export function SettingsPanel() {
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Rain Color</label>
               <input
                 type="color"
-                value={`#${Math.round(useAppStore((state) => state.effectSettings.matrixRainColor)[0] * 255).toString(16).padStart(2, '0')}${Math.round(useAppStore((state) => state.effectSettings.matrixRainColor)[1] * 255).toString(16).padStart(2, '0')}${Math.round(useAppStore((state) => state.effectSettings.matrixRainColor)[2] * 255).toString(16).padStart(2, '0')}`}
+                value={`#${Math.round(effectMatrixRainColor[0] * 255).toString(16).padStart(2, '0')}${Math.round(effectMatrixRainColor[1] * 255).toString(16).padStart(2, '0')}${Math.round(effectMatrixRainColor[2] * 255).toString(16).padStart(2, '0')}`}
                 onChange={(e) => {
                   const hex = e.target.value.slice(1);
                   const r = parseInt(hex.slice(0, 2), 16) / 255;
@@ -1040,7 +1068,7 @@ export function SettingsPanel() {
             <div>
               <label className="text-xs text-[var(--text-secondary)] block mb-2">Method</label>
               <select
-                value={useAppStore((state) => state.effectSettings.ditheringMethod)}
+                value={effectDitheringMethod}
                 onChange={(e) => updateEffectSettings({ ditheringMethod: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
@@ -1052,14 +1080,14 @@ export function SettingsPanel() {
             </div>
             <Slider
               label="Color Levels"
-              value={useAppStore((state) => state.effectSettings.ditheringColorLevels)}
+              value={effectDitheringColorLevels}
               min={2}
               max={16}
               onChange={(v) => updateEffectSettings({ ditheringColorLevels: v })}
             />
             <Slider
               label="Matrix Size"
-              value={useAppStore((state) => state.effectSettings.ditheringMatrixSize)}
+              value={effectDitheringMatrixSize}
               min={2}
               max={8}
               step={2}
