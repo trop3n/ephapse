@@ -1096,6 +1096,36 @@ export function SettingsPanel() {
           </div>
         )}
 
+        {/* ASCII Settings - only show when active */}
+        {activeEffect === 'ascii' && (
+          <div className="border-b border-[var(--border)] p-3 space-y-4">
+            <h3 className="text-sm font-medium text-[var(--accent)]">ASCII Settings</h3>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-2">Match Quality</label>
+              <select
+                value={advancedMatchQuality}
+                onChange={(e) => updateAdvanced({ matchQuality: e.target.value as 'fast' | 'balanced' | 'quality' })}
+                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+              >
+                <option value="fast">Fast</option>
+                <option value="balanced">Balanced</option>
+                <option value="quality">Quality</option>
+              </select>
+            </div>
+            <Slider
+              label="Brightness Weight"
+              value={advancedBrightnessWeight}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => updateAdvanced({ brightnessWeight: v })}
+            />
+            <p className="text-xs text-[var(--text-secondary)]">
+              Higher values = faster matching by brightness only. Lower = spatial pattern matching.
+            </p>
+          </div>
+        )}
+
         {/* Character Settings */}
         <Section
           title="Character"

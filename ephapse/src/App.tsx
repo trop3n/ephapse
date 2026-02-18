@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { InputPanel } from './components/InputPanel';
 import { EffectsPanel } from './components/EffectsPanel';
+import { PresetsPanel } from './components/PresetsPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { Preview } from './components/Preview';
 import type { PreviewExportHandle } from './components/Preview';
@@ -49,8 +50,11 @@ function App() {
         {/* Center - Preview */}
         <Preview ref={previewRef} />
 
-        {/* Right Sidebar - Settings */}
-        <SettingsPanel />
+        {/* Right Sidebar - Presets & Settings */}
+        <div className="flex shrink-0">
+          <PresetsPanel />
+          <SettingsPanel />
+        </div>
       </main>
 
       <ExportModal

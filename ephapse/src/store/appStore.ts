@@ -20,6 +20,22 @@ interface SettingsSections {
   postProcessing: boolean;
 }
 
+// Preset interface
+export interface Preset {
+  id: string;
+  name: string;
+  effect: EffectType;
+  createdAt: number;
+  settings: {
+    character: CharacterSettings;
+    image: ImageSettings;
+    color: ColorSettings;
+    advanced: AdvancedSettings;
+    postProcessing: PostProcessingSettings;
+    effectSettings: EffectSettings;
+  };
+}
+
 // ASCII settings
 interface CharacterSettings {
   charset: string;
@@ -262,6 +278,9 @@ interface AppState {
   advanced: AdvancedSettings;
   postProcessing: PostProcessingSettings;
   
+  // Presets
+  presets: Preset[];
+  
   // UI
   panels: PanelState;
   settingsSections: SettingsSections;
@@ -287,6 +306,16 @@ interface AppState {
   updateAdvanced: (settings: Partial<AdvancedSettings>) => void;
   updatePostProcessing: (settings: Partial<PostProcessingSettings>) => void;
   
+  // Preset actions
+  savePreset: (name: string) => void;
+  loadPreset: (id: string) => void;
+  deletePreset: (id: string) => void;
+  renamePreset: (id: string, name: string) => void;
+  
+  // Reset actions
+  resetSettings: () => void;
+  resetCurrentEffect: () => void;
+  
   togglePanel: (panel: keyof PanelState) => void;
   toggleSettingsSection: (section: keyof SettingsSections) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -294,8 +323,6 @@ interface AppState {
   toggleFullscreen: () => void;
   toggleTheme: () => void;
   setShowExportModal: (show: boolean) => void;
-  
-  resetSettings: () => void;
 }
 
 // Default settings
@@ -481,6 +508,8 @@ export const useAppStore = create<AppState>()(
       advanced: { ...defaultAdvancedSettings },
       postProcessing: { ...defaultPostProcessingSettings },
       
+      presets: [],
+      
       panels: { ...defaultPanelState },
       settingsSections: { ...defaultSettingsSections },
       sidebarCollapsed: false,
@@ -547,6 +576,56 @@ export const useAppStore = create<AppState>()(
           postProcessing: { ...state.postProcessing, ...settings },
         })),
       
+      // Preset actions
+      savePreset: (name) => {
+        const state = get();
+        const preset: Preset = {
+          id: crypto.randomUUID(),
+          name,
+          effect: state.activeEffect,
+          createdAt: Date.now(),
+          settings: {
+            character: { ...state.character },
+            image: { ...state.image },
+            color: { ...state.color },
+            advanced: { ...state.advanced },
+            postProcessing: { ...state.postProcessing },
+            effectSettings: { ...state.effectSettings },
+          },
+        };
+        set({ presets: [...state.presets, preset] });
+      },
+      
+      loadPreset: (id) => {
+        const state = get();
+        const preset = state.presets.find((p) => p.id === id);
+        if (!preset) return;
+        
+        set({
+          activeEffect: preset.effect,
+          character: { ...preset.settings.character },
+          image: { ...preset.settings.image },
+          color: { ...preset.settings.color },
+          advanced: { ...preset.settings.advanced },
+          postProcessing: { ...preset.settings.postProcessing },
+          effectSettings: { ...preset.settings.effectSettings },
+        });
+      },
+      
+      deletePreset: (id) => {
+        set((state) => ({
+          presets: state.presets.filter((p) => p.id !== id),
+        }));
+      },
+      
+      renamePreset: (id, name) => {
+        set((state) => ({
+          presets: state.presets.map((p) =>
+            p.id === id ? { ...p, name } : p
+          ),
+        }));
+      },
+      
       togglePanel: (panel) =>
         set((state) => ({
           panels: { ...state.panels, [panel]: !state.panels[panel] },
@@ -586,12 +665,23 @@ export const useAppStore = create<AppState>()(
           postProcessing: { ...defaultPostProcessingSettings },
           effectSettings: { ...defaultEffectSettings },
         }),
+      
+      resetCurrentEffect: () =>
+        set({
+          character: { ...defaultCharacterSettings },
+          image: { ...defaultImageSettings },
+          color: { ...defaultColorSettings },
+          advanced: { ...defaultAdvancedSettings },
+          postProcessing: { ...defaultPostProcessingSettings },
+          effectSettings: { ...defaultEffectSettings },
+        }),
     }),
     {
       name: 'psynapse-storage-v1',
       skipHydration: true,
       partialize: (state) => ({
         theme: state.theme,
+        presets: state.presets,
         character: state.character,
         image: state.image,
         color: state.color,

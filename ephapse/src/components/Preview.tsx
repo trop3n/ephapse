@@ -841,7 +841,7 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
           return;
         }
 
-        if (hasPostProcessing && activeEffect === 'ascii') {
+        if (hasPostProcessing) {
           const intermediate = ensureIntermediateTexture(width, height);
 
           effect.render(

@@ -212,15 +212,16 @@ struct AsciiUniforms {
   sharpness: f32,           // offset 88
   gamma: f32,               // offset 92
   imageColorMode: f32,      // offset 96
-  gridCols: f32,            // offset 100
-  backgroundColorR: f32,    // offset 104
-  backgroundColorG: f32,    // offset 108
-  backgroundColorB: f32,    // offset 112
-  brightnessMapping: f32,   // offset 116
-  edgeEnhance: f32,         // offset 120
-  blur: f32,                // offset 124
-  quantizeColors: f32,      // offset 128
-  _pad: f32,                // offset 132
+  gridCols: u32,            // offset 100
+  gridRows: u32,            // offset 104
+  backgroundColorR: f32,    // offset 108
+  backgroundColorG: f32,    // offset 112
+  backgroundColorB: f32,    // offset 116
+  brightnessMapping: f32,   // offset 120
+  edgeEnhance: f32,         // offset 124
+  blur: f32,                // offset 128
+  quantizeColors: f32,      // offset 132
+  _pad: f32,                // offset 136
 }
 
 @group(0) @binding(0) var sourceSampler: sampler;
@@ -345,18 +346,11 @@ fn applyImageProcessing(color: vec3f, invGamma: f32, brightnessOffset: f32,
 @fragment
 fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let invCellSize = 1.0 / uniforms.cellSize;
-  let invOutputSize = 1.0 / uniforms.outputSize;
   let invAtlasSize = 1.0 / uniforms.atlasSize;
   let texelSize = 1.0 / uniforms.sourceSize;
 
-  let invGamma = 1.0 / uniforms.gamma;
-  let brightnessOffset = uniforms.brightness * INV_200;
-  let contrastFactor = (uniforms.contrast + 100.0) * INV_100;
-  let satFactor = (uniforms.saturation + 100.0) * INV_100;
-  let colorMode = i32(uniforms.imageColorMode + 0.5);
-
   let backgroundColor = vec3f(uniforms.backgroundColorR, uniforms.backgroundColorG, uniforms.backgroundColorB);
-  
+
   if (texCoord.x < 0.0 || texCoord.y < 0.0 || texCoord.x > 1.0 || texCoord.y > 1.0) {
     return vec4f(backgroundColor, 1.0);
   }
@@ -364,6 +358,20 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let pixelPos = texCoord * uniforms.outputSize;
   let cellPos = floor(pixelPos * invCellSize);
   let cellUV = fract(pixelPos * invCellSize);
+  
+  let gridCols = uniforms.gridCols;
+  let gridRows = uniforms.gridRows;
+  let gridColsF = f32(gridCols);
+  let gridRowsF = f32(gridRows);
+  
+  if (cellPos.x < 0.0 || cellPos.y < 0.0 || cellPos.x >= gridColsF || cellPos.y >= gridRowsF) {
+    return vec4f(backgroundColor, 1.0);
+  }
+  
+  let cellX = u32(cellPos.x);
+  let cellY = u32(cellPos.y);
+  let cellIndex = cellY * gridCols + cellX;
+  let charIndex = matchResult[cellIndex];
 
   let gapRatio = uniforms.spacing * 0.5;
   let charArea = 1.0 - gapRatio;
@@ -377,9 +385,20 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let remappedUV = (cellUV - halfGap) * invCharArea;
   let clampedCellUV = saturate(remappedUV);
 
-  let numCells = max(floor(uniforms.outputSize * invCellSize), vec2f(1.0));
-  let invNumCells = 1.0 / numCells;
+  let atlasColsU = u32(uniforms.atlasCols);
+  let atlasCol = f32(charIndex % atlasColsU);
+  let atlasRow = f32(charIndex / atlasColsU);
 
+  let atlasCharUV = vec2f(
+    (atlasCol + clampedCellUV.x) * uniforms.atlasCharSize.x,
+    (atlasRow + clampedCellUV.y) * uniforms.atlasCharSize.y
+  ) * invAtlasSize;
+
+  let atlasColor = textureSample(fontAtlas, sourceSampler, atlasCharUV);
+  let charIntensity = select(atlasColor.r, 0.0, inGap && uniforms.spacing > 0.01);
+
+  let numCells = vec2f(gridColsF, gridRowsF);
+  let invNumCells = 1.0 / numCells;
   let sourceUV = (cellPos + 0.5) * invNumCells;
   let clampedSourceUV = saturate(sourceUV);
 
@@ -426,29 +445,14 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
     processedRgb = floor(processedRgb * levels) * invLevelsMinus1;
   }
 
+  let invGamma = 1.0 / uniforms.gamma;
+  let brightnessOffset = uniforms.brightness * INV_200;
+  let contrastFactor = (uniforms.contrast + 100.0) * INV_100;
+  let satFactor = (uniforms.saturation + 100.0) * INV_100;
+  let colorMode = i32(uniforms.imageColorMode + 0.5);
+
   let processedColor = applyImageProcessing(processedRgb, invGamma, brightnessOffset, 
     contrastFactor, satFactor, colorMode);
-
-  let gridCols = u32(uniforms.gridCols);
-  let gridRows = u32(floor(uniforms.outputSize.y * invCellSize.y));
-  
-  let cellX = min(u32(cellPos.x), gridCols - 1u);
-  let cellY = min(u32(cellPos.y), max(gridRows - 1u, 0u));
-  
-  let cellIndex = cellY * gridCols + cellX;
-  let charIndex = matchResult[cellIndex];
-
-  let atlasColsU = u32(uniforms.atlasCols);
-  let atlasCol = f32(charIndex % atlasColsU);
-  let atlasRow = f32(charIndex / atlasColsU);
-
-  let atlasCharUV = vec2f(
-    (atlasCol + clampedCellUV.x) * uniforms.atlasCharSize.x,
-    (atlasRow + clampedCellUV.y) * uniforms.atlasCharSize.y
-  ) * invAtlasSize;
-
-  let atlasColor = textureSample(fontAtlas, sourceSampler, atlasCharUV);
-  let charIntensity = select(atlasColor.r, 0.0, inGap && uniforms.spacing > 0.01);
 
   let customColor = vec3f(uniforms.customColorR, uniforms.customColorG, uniforms.customColorB);
   let finalColor = select(customColor, processedColor, uniforms.useOriginalColors > 0.5);
@@ -598,7 +602,7 @@ export class AsciiEffect {
     const gridRows = Math.max(1, Math.floor(outputHeight / cellSize));
     
     this.updateMatchUniforms(sourceWidth, sourceHeight, gridCols, gridRows);
-    this.updateAsciiUniforms(sourceWidth, sourceHeight, outputWidth, outputHeight, gridCols);
+    this.updateAsciiUniforms(sourceWidth, sourceHeight, outputWidth, outputHeight, gridCols, gridRows);
     
     const computeBindGroup = this.device.createBindGroup({
       layout: this.computeBindGroupLayout,
@@ -678,12 +682,14 @@ export class AsciiEffect {
     this.device.queue.writeBuffer(this.matchUniformBuffer, 0, buffer);
   }
   
-  private updateAsciiUniforms(sourceWidth: number, sourceHeight: number, outputWidth: number, outputHeight: number, gridCols: number) {
+  private updateAsciiUniforms(sourceWidth: number, sourceHeight: number, outputWidth: number, outputHeight: number, gridCols: number, gridRows: number) {
     const colorModeMap: Record<string, number> = {
       'color': 0, 'grayscale': 1, 'monochrome': 2, 'sepia': 3, 'original': 6,
     };
     
-    const data = new Float32Array(36);
+    const buffer = new ArrayBuffer(144);
+    const data = new Float32Array(buffer);
+    const uintData = new Uint32Array(buffer);
     let offset = 0;
     
     data[offset++] = sourceWidth;
@@ -711,7 +717,10 @@ export class AsciiEffect {
     data[offset++] = this.options.sharpness;
     data[offset++] = this.options.gamma;
     data[offset++] = colorModeMap[this.options.colorMode] ?? 0;
-    data[offset++] = gridCols;
+    
+    uintData[offset++] = gridCols;
+    uintData[offset++] = gridRows;
+    
     data[offset++] = this.options.backgroundColor[0];
     data[offset++] = this.options.backgroundColor[1];
     data[offset++] = this.options.backgroundColor[2];
@@ -721,7 +730,7 @@ export class AsciiEffect {
     data[offset++] = this.options.quantizeColors;
     data[offset++] = 0;
     
-    this.device.queue.writeBuffer(this.asciiUniformBuffer, 0, data);
+    this.device.queue.writeBuffer(this.asciiUniformBuffer, 0, buffer);
   }
   
   updateOptions(options: Partial<AsciiEffectOptions>) {
