@@ -107,7 +107,7 @@ export function PresetsPanel() {
             <button
               onClick={handleSave}
               disabled={!saveName.trim()}
-              className="px-2 py-1.5 rounded bg-[var(--accent)] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+              className="px-2 py-1.5 rounded bg-[var(--accent)] text-[var(--bg-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
             >
               <Save className="w-4 h-4" />
             </button>
@@ -125,7 +125,7 @@ export function PresetsPanel() {
                   key={preset.id}
                   className={`p-2 rounded bg-[var(--bg-tertiary)] border ${
                     loadedId === preset.id 
-                      ? 'border-green-500' 
+                      ? 'border-[var(--accent)]'
                       : 'border-transparent'
                   }`}
                 >
@@ -149,7 +149,7 @@ export function PresetsPanel() {
                         onClick={() => handleRename(preset.id)}
                         className="p-1 hover:bg-[var(--bg-hover)] rounded"
                       >
-                        <Check className="w-3 h-3 text-green-500" />
+                        <Check className="w-3 h-3 text-[var(--text-secondary)]" />
                       </button>
                     </div>
                   ) : (
