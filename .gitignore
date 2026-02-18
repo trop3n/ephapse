@@ -24,5 +24,5 @@ dist-ssr
 *.sw?
 
 # Agent progress tracking
-AGENTS.md
+ephapse/AGENTS.md
 grainrad-analysis.md

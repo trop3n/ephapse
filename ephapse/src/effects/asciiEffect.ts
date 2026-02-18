@@ -97,11 +97,14 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let invGamma = 1.0 / uniforms.imageGamma;
   let contrastFactor = (uniforms.imageContrast + 100.0) * INV_100;
   let brightnessOffset = uniforms.imageBrightness * INV_200;
-  let invSourceSize = 1.0 / uniforms.sourceSize;
+  let invGridSizeF = 1.0 / vec2f(uniforms.gridSize);
   let doInvert = uniforms.invert > 0.5;
 
-  let cellUVStart = vec2f(f32(cellX), f32(cellY)) * uniforms.cellSize * invSourceSize;
-  let cellUVSize = uniforms.cellSize * invSourceSize;
+  // Map cell position to source UV using grid dimensions, not source pixel size.
+  // This ensures character matching samples the same region the render pass displays,
+  // regardless of whether source image and output canvas have different dimensions.
+  let cellUVStart = vec2f(f32(cellX), f32(cellY)) * invGridSizeF;
+  let cellUVSize = invGridSizeF;
 
   var sourceBrightness = 0.0;
   var sourceSamples: array<f32, 16>;
@@ -478,6 +481,7 @@ export class AsciiEffect {
   private matchUniformBuffer!: GPUBuffer;
   private asciiUniformBuffer!: GPUBuffer;
   private matchResultBuffer!: GPUBuffer;
+  private matchResultBufferCells: number = 0;
   
   constructor(
     device: GPUDevice,
@@ -567,13 +571,30 @@ export class AsciiEffect {
     });
   }
   
-  private createBuffers() {
-    const maxGridCells = 4096 * 4096;
-    
+  private ensureMatchResultBuffer(requiredCells: number) {
+    if (requiredCells <= this.matchResultBufferCells) return;
+    // Grow by at least 2x to avoid frequent reallocations
+    const newCells = Math.max(requiredCells, this.matchResultBufferCells * 2, 4096);
+    if (this.matchResultBufferCells > 0) {
+      this.matchResultBuffer.destroy();
+    }
     this.matchResultBuffer = this.device.createBuffer({
       label: 'Match Result Buffer',
-      size: maxGridCells * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      size: newCells * 4,
+      usage: GPUBufferUsage.STORAGE,
+    });
+    this.matchResultBufferCells = newCells;
+  }
+
+  private createBuffers() {
+    // Start with a buffer sized for a 1080p canvas at cellSize=12 (160x90=14400 cells).
+    // It grows automatically in render() if a larger grid is needed.
+    const initialCells = 256 * 144;
+    this.matchResultBufferCells = initialCells;
+    this.matchResultBuffer = this.device.createBuffer({
+      label: 'Match Result Buffer',
+      size: initialCells * 4,
+      usage: GPUBufferUsage.STORAGE,
     });
     
     this.matchUniformBuffer = this.device.createBuffer({
@@ -601,6 +622,7 @@ export class AsciiEffect {
     const gridCols = Math.max(1, Math.floor(outputWidth / cellSize));
     const gridRows = Math.max(1, Math.floor(outputHeight / cellSize));
     
+    this.ensureMatchResultBuffer(gridCols * gridRows);
     this.updateMatchUniforms(sourceWidth, sourceHeight, gridCols, gridRows);
     this.updateAsciiUniforms(sourceWidth, sourceHeight, outputWidth, outputHeight, gridCols, gridRows);
     
@@ -738,7 +760,9 @@ export class AsciiEffect {
   }
   
   destroy() {
-    this.matchResultBuffer.destroy();
+    if (this.matchResultBufferCells > 0) {
+      this.matchResultBuffer.destroy();
+    }
     this.matchUniformBuffer.destroy();
     this.asciiUniformBuffer.destroy();
   }
