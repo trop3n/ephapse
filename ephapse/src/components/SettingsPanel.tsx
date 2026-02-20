@@ -1202,38 +1202,40 @@ export function SettingsPanel() {
           </div>
         </Section>
 
-        {/* Color Settings */}
-        <Section
-          title="Color"
-          expanded={settingsSectionsColor}
-          onToggle={() => toggleSettingsSection('color')}
-        >
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
-              <select
-                value={colorMode}
-                onChange={(e) => updateColor({ mode: e.target.value as 'color' | 'grayscale' | 'monochrome' | 'sepia' | 'original' })}
-                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
-              >
-                <option value="color">Full Color</option>
-                <option value="grayscale">Grayscale</option>
-                <option value="monochrome">Monochrome</option>
-                <option value="sepia">Sepia</option>
-                <option value="original">Original</option>
-              </select>
+        {/* Color Settings - not shown for distortion effects */}
+        {!['vhs', 'noiseField', 'pixelSort', 'blur', 'matrixRain'].includes(activeEffect || '') && (
+          <Section
+            title="Color"
+            expanded={settingsSectionsColor}
+            onToggle={() => toggleSettingsSection('color')}
+          >
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-[var(--text-secondary)] block mb-2">Color Mode</label>
+                <select
+                  value={colorMode}
+                  onChange={(e) => updateColor({ mode: e.target.value as 'color' | 'grayscale' | 'monochrome' | 'sepia' | 'original' })}
+                  className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+                >
+                  <option value="color">Full Color</option>
+                  <option value="grayscale">Grayscale</option>
+                  <option value="monochrome">Monochrome</option>
+                  <option value="sepia">Sepia</option>
+                  <option value="original">Original</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={colorUseOriginalColors}
+                  onChange={(e) => updateColor({ useOriginalColors: e.target.checked })}
+                  className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                />
+                <span className="text-sm">Use Original Colors</span>
+              </label>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={colorUseOriginalColors}
-                onChange={(e) => updateColor({ useOriginalColors: e.target.checked })}
-                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
-              />
-              <span className="text-sm">Use Original Colors</span>
-            </label>
-          </div>
-        </Section>
+          </Section>
+        )}
 
         {/* Advanced Settings - ASCII only */}
         {activeEffect === 'ascii' && (
