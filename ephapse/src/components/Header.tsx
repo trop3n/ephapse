@@ -13,10 +13,7 @@ export function Header() {
     <header className="h-14 flex items-center justify-between px-4 border-b border-[var(--border)] bg-[var(--bg-secondary)] shrink-0">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-[var(--accent)] flex items-center justify-center">
-            <span className="text-[var(--bg-primary)] font-bold text-lg">e</span>
-          </div>
-          <h1 className="text-lg font-semibold tracking-tight">ephapse</h1>
+          <h1 className="font-logo">ephapse</h1>
         </div>
         <span className="text-xs text-[var(--text-secondary)] hidden sm:inline">
           WebGPU-powered effects

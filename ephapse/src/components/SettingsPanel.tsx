@@ -1096,77 +1096,50 @@ export function SettingsPanel() {
           </div>
         )}
 
-        {/* ASCII Settings - only show when active */}
-        {activeEffect === 'ascii' && (
-          <div className="border-b border-[var(--border)] p-3 space-y-4">
-            <h3 className="text-sm font-medium text-[var(--accent)]">ASCII Settings</h3>
-            <div>
-              <label className="text-xs text-[var(--text-secondary)] block mb-2">Match Quality</label>
-              <select
-                value={advancedMatchQuality}
-                onChange={(e) => updateAdvanced({ matchQuality: e.target.value as 'fast' | 'balanced' | 'quality' })}
-                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
-              >
-                <option value="fast">Fast</option>
-                <option value="balanced">Balanced</option>
-                <option value="quality">Quality</option>
-              </select>
-            </div>
-            <Slider
-              label="Brightness Weight"
-              value={advancedBrightnessWeight}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={(v) => updateAdvanced({ brightnessWeight: v })}
-            />
-            <p className="text-xs text-[var(--text-secondary)]">
-              Higher values = faster matching by brightness only. Lower = spatial pattern matching.
-            </p>
-          </div>
-        )}
 
-        {/* Character Settings */}
-        <Section
-          title="Character"
-          expanded={settingsSectionsCharacter}
-          onToggle={() => toggleSettingsSection('character')}
-        >
-          <div className="space-y-4">
-            <Slider
-              label="Cell Size"
-              value={characterCellSize}
-              min={4}
-              max={32}
-              onChange={(v) => updateCharacter({ cellSize: v })}
-            />
-            <Slider
-              label="Spacing"
-              value={characterSpacing}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={(v) => updateCharacter({ spacing: v })}
-            />
-            <Slider
-              label="Brightness Mapping"
-              value={characterBrightnessMapping}
-              min={0.1}
-              max={2}
-              step={0.1}
-              onChange={(v) => updateCharacter({ brightnessMapping: v })}
-            />
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={characterInvert}
-                onChange={(e) => updateCharacter({ invert: e.target.checked })}
-                className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+        {/* Character Settings - ASCII only */}
+        {activeEffect === 'ascii' && (
+          <Section
+            title="Character"
+            expanded={settingsSectionsCharacter}
+            onToggle={() => toggleSettingsSection('character')}
+          >
+            <div className="space-y-4">
+              <Slider
+                label="Cell Size"
+                value={characterCellSize}
+                min={4}
+                max={32}
+                onChange={(v) => updateCharacter({ cellSize: v })}
               />
-              <span className="text-sm">Invert</span>
-            </label>
-          </div>
-        </Section>
+              <Slider
+                label="Spacing"
+                value={characterSpacing}
+                min={0}
+                max={1}
+                step={0.05}
+                onChange={(v) => updateCharacter({ spacing: v })}
+              />
+              <Slider
+                label="Brightness Mapping"
+                value={characterBrightnessMapping}
+                min={0.1}
+                max={2}
+                step={0.1}
+                onChange={(v) => updateCharacter({ brightnessMapping: v })}
+              />
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={characterInvert}
+                  onChange={(e) => updateCharacter({ invert: e.target.checked })}
+                  className="rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                />
+                <span className="text-sm">Invert</span>
+              </label>
+            </div>
+          </Section>
+        )}
 
         {/* Image Settings */}
         <Section
@@ -1262,50 +1235,52 @@ export function SettingsPanel() {
           </div>
         </Section>
 
-        {/* Advanced Settings */}
-        <Section
-          title="Advanced"
-          expanded={settingsSectionsAdvanced}
-          onToggle={() => toggleSettingsSection('advanced')}
-        >
-          <div className="space-y-4">
-            <Slider
-              label="Edge Enhance"
-              value={advancedEdgeEnhance}
-              min={0}
-              max={100}
-              onChange={(v) => updateAdvanced({ edgeEnhance: v })}
-            />
-            <Slider
-              label="Quantize Colors"
-              value={advancedQuantizeColors}
-              min={0}
-              max={32}
-              onChange={(v) => updateAdvanced({ quantizeColors: v })}
-            />
-            <Slider
-              label="Pattern Matching"
-              value={advancedBrightnessWeight}
-              min={0}
-              max={1}
-              step={0.1}
-              suffix=""
-              onChange={(v) => updateAdvanced({ brightnessWeight: v })}
-            />
-            <div>
-              <label className="text-xs text-[var(--text-secondary)] block mb-2">Match Quality</label>
-              <select
-                value={advancedMatchQuality}
-                onChange={(e) => updateAdvanced({ matchQuality: e.target.value as 'fast' | 'balanced' | 'quality' })}
-                className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
-              >
-                <option value="fast">Fast (2x2)</option>
-                <option value="balanced">Balanced (3x3)</option>
-                <option value="quality">Quality (4x4)</option>
-              </select>
+        {/* Advanced Settings - ASCII only */}
+        {activeEffect === 'ascii' && (
+          <Section
+            title="Advanced"
+            expanded={settingsSectionsAdvanced}
+            onToggle={() => toggleSettingsSection('advanced')}
+          >
+            <div className="space-y-4">
+              <Slider
+                label="Edge Enhance"
+                value={advancedEdgeEnhance}
+                min={0}
+                max={100}
+                onChange={(v) => updateAdvanced({ edgeEnhance: v })}
+              />
+              <Slider
+                label="Quantize Colors"
+                value={advancedQuantizeColors}
+                min={0}
+                max={32}
+                onChange={(v) => updateAdvanced({ quantizeColors: v })}
+              />
+              <Slider
+                label="Pattern Matching"
+                value={advancedBrightnessWeight}
+                min={0}
+                max={1}
+                step={0.1}
+                suffix=""
+                onChange={(v) => updateAdvanced({ brightnessWeight: v })}
+              />
+              <div>
+                <label className="text-xs text-[var(--text-secondary)] block mb-2">Match Quality</label>
+                <select
+                  value={advancedMatchQuality}
+                  onChange={(e) => updateAdvanced({ matchQuality: e.target.value as 'fast' | 'balanced' | 'quality' })}
+                  className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
+                >
+                  <option value="fast">Fast (2x2)</option>
+                  <option value="balanced">Balanced (3x3)</option>
+                  <option value="quality">Quality (4x4)</option>
+                </select>
+              </div>
             </div>
-          </div>
-        </Section>
+          </Section>
+        )}
 
         {/* Post-Processing */}
         <Section
