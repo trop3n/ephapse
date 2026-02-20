@@ -108,7 +108,6 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
   const halftoneAngle = useAppStore((state) => state.effectSettings.halftoneAngle);
   const halftoneShape = useAppStore((state) => state.effectSettings.halftoneShape);
   const halftoneInvert = useAppStore((state) => state.effectSettings.halftoneInvert);
-  const halftoneColorMode = useAppStore((state) => state.effectSettings.halftoneColorMode);
   const halftoneForeground = useAppStore((state) => state.effectSettings.halftoneForeground);
   const halftoneBackground = useAppStore((state) => state.effectSettings.halftoneBackground);
 
@@ -259,18 +258,31 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     contrast: 0,
   }), [thresholdLevels, thresholdDither, thresholdPoint, thresholdInvert, thresholdForeground, thresholdBackground, thresholdPreserveColors]);
 
-  const halftoneSettings = useMemo(() => ({
-    spacing: halftoneSpacing,
-    angle: halftoneAngle,
-    shape: halftoneShape,
-    invert: halftoneInvert,
-    colorMode: halftoneColorMode,
-    foregroundColor: halftoneForeground,
-    backgroundColor: halftoneBackground,
-    dotScale: 1,
-    brightness: 0,
-    contrast: 0,
-  }), [halftoneSpacing, halftoneAngle, halftoneShape, halftoneInvert, halftoneColorMode, halftoneForeground, halftoneBackground]);
+  const halftoneSettings = useMemo(() => {
+    const colorModeMap: Record<string, number> = {
+      'color': 0,
+      'original': 0,
+      'grayscale': 1,
+      'monochrome': 2,
+      'sepia': 3,
+    };
+    return {
+      spacing: halftoneSpacing,
+      angle: halftoneAngle,
+      shape: halftoneShape,
+      invert: halftoneInvert,
+      colorMode: colorModeMap[colorMode] ?? 0,
+      foregroundColor: halftoneInvert ? halftoneBackground : halftoneForeground,
+      backgroundColor: halftoneInvert ? halftoneForeground : halftoneBackground,
+      dotScale: 1,
+      brightness,
+      contrast,
+      gamma,
+      saturation,
+      hue,
+      useOriginalColors,
+    };
+  }, [halftoneSpacing, halftoneAngle, halftoneShape, halftoneInvert, halftoneForeground, halftoneBackground, brightness, contrast, gamma, saturation, hue, colorMode, useOriginalColors]);
 
   const dotsSettings = useMemo(() => ({
     spacing: dotsSpacing,
@@ -404,13 +416,31 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     time: 0,
   }), [matrixRainCellSize, matrixRainSpeed, matrixRainTrailLength, matrixRainColor, matrixRainBgOpacity, matrixRainGlowIntensity, matrixRainDirection, matrixRainThreshold, matrixRainSpacing]);
 
-  const ditheringSettings = useMemo(() => ({
-    method: ditheringMethod,
-    colorLevels: ditheringColorLevels,
-    matrixSize: ditheringMatrixSize,
-    brightness: 0,
-    contrast: 0,
-  }), [ditheringMethod, ditheringColorLevels, ditheringMatrixSize]);
+  const ditheringSettings = useMemo(() => {
+    const colorModeMap: Record<string, number> = {
+      'color': 0,
+      'original': 0,
+      'grayscale': 1,
+      'monochrome': 2,
+      'sepia': 3,
+    };
+    return {
+      method: ditheringMethod,
+      colorLevels: ditheringColorLevels,
+      matrixSize: ditheringMatrixSize,
+      brightness,
+      contrast,
+      gamma,
+      saturation,
+      hue,
+      sharpness,
+      blur,
+      colorMode: colorModeMap[colorMode] ?? 0,
+      useOriginalColors,
+      foregroundColor,
+      backgroundColor,
+    };
+  }, [ditheringMethod, ditheringColorLevels, ditheringMatrixSize, brightness, contrast, gamma, saturation, hue, sharpness, blur, colorMode, useOriginalColors, foregroundColor, backgroundColor]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -4,18 +4,36 @@ export interface DitheringOptions {
   resolution: [number, number];
   brightness: number;
   contrast: number;
+  gamma: number;
+  saturation: number;
+  hue: number;
+  sharpness: number;
+  blur: number;
   method: number;
   colorLevels: number;
   matrixSize: number;
+  colorMode: number;
+  useOriginalColors: boolean;
+  foregroundColor: [number, number, number];
+  backgroundColor: [number, number, number];
 }
 
 const DEFAULT_OPTIONS: DitheringOptions = {
   resolution: [0, 0],
   brightness: 0,
   contrast: 0,
+  gamma: 1,
+  saturation: 0,
+  hue: 0,
+  sharpness: 0,
+  blur: 0,
   method: 0,
   colorLevels: 2,
   matrixSize: 4,
+  colorMode: 0,
+  useOriginalColors: true,
+  foregroundColor: [1, 1, 1],
+  backgroundColor: [0, 0, 0],
 };
 
 const FRAGMENT_SHADER = `
@@ -26,6 +44,15 @@ struct DitheringUniforms {
   matrixSize: f32,
   brightness: f32,
   contrast: f32,
+  gamma: f32,
+  saturation: f32,
+  hue: f32,
+  sharpness: f32,
+  blur: f32,
+  colorMode: f32,
+  useOriginalColors: f32,
+  foregroundColor: vec3f,
+  backgroundColor: vec3f,
 }
 
 @group(0) @binding(0) var texSampler: sampler;
@@ -36,10 +63,75 @@ fn luminance(c: vec3f) -> f32 {
   return dot(c, vec3f(0.299, 0.587, 0.114));
 }
 
-fn applyBrightnessContrast(color: vec3f, brightness: f32, contrast: f32) -> vec3f {
-  var result = color + vec3f(brightness);
-  let contrastFactor = (1.0 + contrast) / (1.0 - contrast * 0.99);
+fn rgbToHsv(c: vec3f) -> vec3f {
+  let maxVal = max(max(c.r, c.g), c.b);
+  let minVal = min(min(c.r, c.g), c.b);
+  let delta = maxVal - minVal;
+  var h = 0.0;
+  let s = select(delta / maxVal, 0.0, maxVal == 0.0);
+  let v = maxVal;
+  if (delta > 0.0) {
+    if (maxVal == c.r) {
+      h = (c.g - c.b) / delta + select(6.0, 0.0, c.g >= c.b);
+    } else if (maxVal == c.g) {
+      h = (c.b - c.r) / delta + 2.0;
+    } else {
+      h = (c.r - c.g) / delta + 4.0;
+    }
+    h /= 6.0;
+  }
+  return vec3f(h, s, v);
+}
+
+fn hsvToRgb(c: vec3f) -> vec3f {
+  let h = c.x * 6.0;
+  let s = c.y;
+  let v = c.z;
+  let i = floor(h);
+  let f = h - i;
+  let p = v * (1.0 - s);
+  let q = v * (1.0 - s * f);
+  let t = v * (1.0 - s * (1.0 - f));
+  let ii = i32(i) % 6;
+  if (ii == 0) { return vec3f(v, t, p); }
+  if (ii == 1) { return vec3f(q, v, p); }
+  if (ii == 2) { return vec3f(p, v, t); }
+  if (ii == 3) { return vec3f(p, q, v); }
+  if (ii == 4) { return vec3f(t, p, v); }
+  return vec3f(v, p, q);
+}
+
+fn applyImageProcessing(color: vec3f) -> vec3f {
+  var result = color;
+  
+  result = result + vec3f(uniforms.brightness);
+  
+  let contrastFactor = (1.0 + uniforms.contrast);
   result = (result - 0.5) * contrastFactor + 0.5;
+  
+  result = pow(clamp(result, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / uniforms.gamma));
+  
+  let gray = vec3f(luminance(result));
+  let satFactor = 1.0 + uniforms.saturation;
+  result = mix(gray, result, satFactor);
+  
+  if (abs(uniforms.hue) > 0.001) {
+    let hsv = rgbToHsv(result);
+    let newHue = fract(hsv.x + uniforms.hue + 1.0);
+    result = hsvToRgb(vec3f(newHue, hsv.y, hsv.z));
+  }
+  
+  let colorModeInt = i32(uniforms.colorMode + 0.5);
+  if (colorModeInt == 1) {
+    result = vec3f(luminance(result));
+  } else if (colorModeInt == 2) {
+    let grayVal = luminance(result);
+    result = mix(uniforms.backgroundColor, uniforms.foregroundColor, grayVal);
+  } else if (colorModeInt == 3) {
+    let grayVal = luminance(result);
+    result = vec3f(grayVal * 1.2, grayVal, grayVal * 0.8);
+  }
+  
   return clamp(result, vec3f(0.0), vec3f(1.0));
 }
 
@@ -97,7 +189,7 @@ fn quantizeChannel(value: f32, levels: f32) -> f32 {
 @fragment
 fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   var color = textureSample(inputTexture, texSampler, texCoord).rgb;
-  color = applyBrightnessContrast(color, uniforms.brightness, uniforms.contrast);
+  color = applyImageProcessing(color);
 
   let pixelCoord = texCoord * uniforms.resolution;
   let methodInt = i32(uniforms.method + 0.5);
@@ -136,11 +228,11 @@ export class DitheringEffect extends SinglePassEffect<DitheringOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 32;
+    return 96;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(7);
+    const data = new Float32Array(24);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.method;
@@ -148,6 +240,21 @@ export class DitheringEffect extends SinglePassEffect<DitheringOptions> {
     data[4] = this.options.matrixSize;
     data[5] = this.options.brightness * 0.005;
     data[6] = this.options.contrast * 0.01;
+    data[7] = Math.max(0.1, this.options.gamma);
+    data[8] = this.options.saturation * 0.01;
+    data[9] = this.options.hue / 360.0;
+    data[10] = this.options.sharpness;
+    data[11] = this.options.blur;
+    data[12] = this.options.colorMode;
+    data[13] = this.options.useOriginalColors ? 1.0 : 0.0;
+    // foregroundColor at offset 64 (index 16)
+    data[16] = this.options.foregroundColor[0];
+    data[17] = this.options.foregroundColor[1];
+    data[18] = this.options.foregroundColor[2];
+    // backgroundColor at offset 80 (index 20)
+    data[20] = this.options.backgroundColor[0];
+    data[21] = this.options.backgroundColor[1];
+    data[22] = this.options.backgroundColor[2];
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }

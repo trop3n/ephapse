@@ -67,12 +67,13 @@ export function PresetsPanel() {
   };
   
   const groupedPresets = presets.reduce((acc, preset) => {
-    if (!acc[preset.effect]) acc[preset.effect] = [];
-    acc[preset.effect].push(preset);
+    const effectKey = preset.effect ?? 'none';
+    if (!acc[effectKey]) acc[effectKey] = [];
+    acc[effectKey].push(preset);
     return acc;
   }, {} as Record<string, Preset[]>);
   
-  const currentEffectPresets = groupedPresets[activeEffect] || [];
+  const currentEffectPresets = activeEffect ? (groupedPresets[activeEffect] || []) : [];
   
   return (
     <div className="w-64 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col shrink-0">
@@ -117,10 +118,10 @@ export function PresetsPanel() {
         {currentEffectPresets.length > 0 && (
           <div className="border-t border-[var(--border)] pt-4">
             <h3 className="text-xs font-medium text-[var(--text-secondary)] mb-2">
-              {EFFECT_NAMES[activeEffect] || activeEffect} Presets
+              {activeEffect ? (EFFECT_NAMES[activeEffect] || activeEffect) : 'No Effect'} Presets
             </h3>
             <div className="space-y-2">
-              {currentEffectPresets.map((preset) => (
+              {currentEffectPresets.map((preset: Preset) => (
                 <div
                   key={preset.id}
                   className={`p-2 rounded bg-[var(--bg-tertiary)] border ${
