@@ -293,9 +293,12 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     colorMode: dotsColorMode,
     foregroundColor: dotsForeground,
     backgroundColor: dotsBackground,
-    brightness: 0,
-    contrast: 0,
-  }), [dotsSpacing, dotsSize, dotsShape, dotsGridType, dotsInvert, dotsColorMode, dotsForeground, dotsBackground]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [dotsSpacing, dotsSize, dotsShape, dotsGridType, dotsInvert, dotsColorMode, dotsForeground, dotsBackground, brightness, contrast, gamma, saturation, hue]);
 
   const edgeDetectionSettings = useMemo(() => ({
     threshold: edgeThreshold,
@@ -305,9 +308,12 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     colorMode: edgeColorMode,
     edgeColor: edgeColor,
     bgColor: edgeBgColor,
-    brightness: 0,
-    contrast: 0,
-  }), [edgeThreshold, edgeLineWidth, edgeAlgorithm, edgeInvert, edgeColorMode, edgeColor, edgeBgColor]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [edgeThreshold, edgeLineWidth, edgeAlgorithm, edgeInvert, edgeColorMode, edgeColor, edgeBgColor, brightness, contrast, gamma, saturation, hue]);
 
   const crosshatchSettings = useMemo(() => ({
     density: crosshatchDensity,
@@ -318,9 +324,12 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     randomness: crosshatchRandomness,
     foregroundColor: crosshatchForeground,
     backgroundColor: crosshatchBackground,
-    brightness: 0,
-    contrast: 0,
-  }), [crosshatchDensity, crosshatchAngle, crosshatchLayers, crosshatchLineWidth, crosshatchInvert, crosshatchRandomness, crosshatchForeground, crosshatchBackground]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [crosshatchDensity, crosshatchAngle, crosshatchLayers, crosshatchLineWidth, crosshatchInvert, crosshatchRandomness, crosshatchForeground, crosshatchBackground, brightness, contrast, gamma, saturation, hue]);
 
   const waveLinesSettings = useMemo(() => ({
     lineCount: waveLinesCount,
@@ -332,10 +341,13 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     animate: waveLinesAnimate,
     foregroundColor: waveLinesForeground,
     backgroundColor: waveLinesBackground,
-    brightness: 0,
-    contrast: 0,
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
     time: 0,
-  }), [waveLinesCount, waveLinesAmplitude, waveLinesFrequency, waveLinesThickness, waveLinesDirection, waveLinesColorMode, waveLinesAnimate, waveLinesForeground, waveLinesBackground]);
+  }), [waveLinesCount, waveLinesAmplitude, waveLinesFrequency, waveLinesThickness, waveLinesDirection, waveLinesColorMode, waveLinesAnimate, waveLinesForeground, waveLinesBackground, brightness, contrast, gamma, saturation, hue]);
 
   const noiseFieldSettings = useMemo(() => ({
     scale: noiseFieldScale,
@@ -345,10 +357,13 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     noiseType: noiseFieldType,
     distortOnly: noiseFieldDistortOnly,
     animate: noiseFieldAnimate,
-    brightness: 0,
-    contrast: 0,
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
     time: 0,
-  }), [noiseFieldScale, noiseFieldIntensity, noiseFieldSpeed, noiseFieldOctaves, noiseFieldType, noiseFieldDistortOnly, noiseFieldAnimate]);
+  }), [noiseFieldScale, noiseFieldIntensity, noiseFieldSpeed, noiseFieldOctaves, noiseFieldType, noiseFieldDistortOnly, noiseFieldAnimate, brightness, contrast, gamma, saturation, hue]);
 
   const vhsSettings = useMemo(() => ({
     distortion: vhsDistortion,
@@ -356,10 +371,13 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     colorBleed: vhsColorBleed,
     scanlines: vhsScanlines,
     trackingError: vhsTrackingError,
-    brightness: 0,
-    contrast: 0,
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
     time: 0,
-  }), [vhsDistortion, vhsNoise, vhsColorBleed, vhsScanlines, vhsTrackingError]);
+  }), [vhsDistortion, vhsNoise, vhsColorBleed, vhsScanlines, vhsTrackingError, brightness, contrast, gamma, saturation, hue]);
 
   const pixelSortSettings = useMemo(() => ({
     threshold: pixelSortThreshold,
@@ -369,15 +387,21 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     intensity: pixelSortIntensity,
     randomness: pixelSortRandomness,
     reverse: pixelSortReverse,
-    brightness: 0,
-    contrast: 0,
-  }), [pixelSortThreshold, pixelSortDirection, pixelSortMode, pixelSortStreakLength, pixelSortIntensity, pixelSortRandomness, pixelSortReverse]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [pixelSortThreshold, pixelSortDirection, pixelSortMode, pixelSortStreakLength, pixelSortIntensity, pixelSortRandomness, pixelSortReverse, brightness, contrast, gamma, saturation, hue]);
 
   const blurSettings = useMemo(() => ({
     radius: blurRadius,
-    brightness: 0,
-    contrast: 0,
-  }), [blurRadius]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [blurRadius, brightness, contrast, gamma, saturation, hue]);
 
   const contourSettings = useMemo(() => ({
     levels: contourLevels,
@@ -387,9 +411,12 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     invert: contourInvert,
     lineColor: contourLineColor,
     bgColor: contourBgColor,
-    brightness: 0,
-    contrast: 0,
-  }), [contourLevels, contourLineThickness, contourFillMode, contourColorMode, contourInvert, contourLineColor, contourBgColor]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [contourLevels, contourLineThickness, contourFillMode, contourColorMode, contourInvert, contourLineColor, contourBgColor, brightness, contrast, gamma, saturation, hue]);
 
   const voronoiSettings = useMemo(() => ({
     cellSize: voronoiCellSize,
@@ -397,9 +424,12 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     edgeColor: voronoiEdgeColor,
     colorMode: voronoiColorMode,
     randomize: voronoiRandomize,
-    brightness: 0,
-    contrast: 0,
-  }), [voronoiCellSize, voronoiEdgeWidth, voronoiEdgeColor, voronoiColorMode, voronoiRandomize]);
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
+  }), [voronoiCellSize, voronoiEdgeWidth, voronoiEdgeColor, voronoiColorMode, voronoiRandomize, brightness, contrast, gamma, saturation, hue]);
 
   const matrixRainSettings = useMemo(() => ({
     cellSize: matrixRainCellSize,
@@ -411,10 +441,13 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     direction: matrixRainDirection,
     threshold: matrixRainThreshold,
     spacing: matrixRainSpacing,
-    brightness: 0,
-    contrast: 0,
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+    hue,
     time: 0,
-  }), [matrixRainCellSize, matrixRainSpeed, matrixRainTrailLength, matrixRainColor, matrixRainBgOpacity, matrixRainGlowIntensity, matrixRainDirection, matrixRainThreshold, matrixRainSpacing]);
+  }), [matrixRainCellSize, matrixRainSpeed, matrixRainTrailLength, matrixRainColor, matrixRainBgOpacity, matrixRainGlowIntensity, matrixRainDirection, matrixRainThreshold, matrixRainSpacing, brightness, contrast, gamma, saturation, hue]);
 
   const ditheringSettings = useMemo(() => {
     const colorModeMap: Record<string, number> = {

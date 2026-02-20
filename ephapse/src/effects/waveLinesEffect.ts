@@ -8,6 +8,9 @@ export interface WaveLinesOptions {
   resolution: [number, number];
   brightness: number;
   contrast: number;
+  gamma: number;
+  saturation: number;
+  hue: number;
   lineCount: number;
   amplitude: number;
   frequency: number;
@@ -24,6 +27,9 @@ const DEFAULT_OPTIONS: WaveLinesOptions = {
   resolution: [0, 0],
   brightness: 0,
   contrast: 0,
+  gamma: 1,
+  saturation: 0,
+  hue: 0,
   lineCount: 50,
   amplitude: 15,
   frequency: 1.5,
@@ -47,6 +53,9 @@ struct WaveLinesUniforms {
   lineThickness: f32,
   brightness: f32,
   contrast: f32,
+  gamma: f32,
+  saturation: f32,
+  hue: f32,
   colorMode: f32,
   fgColorR: f32,
   fgColorG: f32,
@@ -65,17 +74,65 @@ fn luminance(c: vec3f) -> f32 {
   return dot(c, vec3f(0.299, 0.587, 0.114));
 }
 
-fn applyBrightnessContrast(color: vec3f, brightness: f32, contrast: f32) -> vec3f {
-  var result = color + brightness;
-  let contrastFactor = (1.0 + contrast) / (1.0 - contrast * 0.99);
+fn rgbToHsv(c: vec3f) -> vec3f {
+  let maxVal = max(max(c.r, c.g), c.b);
+  let minVal = min(min(c.r, c.g), c.b);
+  let delta = maxVal - minVal;
+  var h = 0.0;
+  let s = select(delta / maxVal, 0.0, maxVal == 0.0);
+  let v = maxVal;
+  if (delta > 0.0) {
+    if (maxVal == c.r) {
+      h = (c.g - c.b) / delta + select(6.0, 0.0, c.g >= c.b);
+    } else if (maxVal == c.g) {
+      h = (c.b - c.r) / delta + 2.0;
+    } else {
+      h = (c.r - c.g) / delta + 4.0;
+    }
+    h /= 6.0;
+  }
+  return vec3f(h, s, v);
+}
+
+fn hsvToRgb(c: vec3f) -> vec3f {
+  let h = c.x * 6.0;
+  let s = c.y;
+  let v = c.z;
+  let i = floor(h);
+  let f = h - i;
+  let p = v * (1.0 - s);
+  let q = v * (1.0 - s * f);
+  let t = v * (1.0 - s * (1.0 - f));
+  let ii = i32(i) % 6;
+  if (ii == 0) { return vec3f(v, t, p); }
+  if (ii == 1) { return vec3f(q, v, p); }
+  if (ii == 2) { return vec3f(p, v, t); }
+  if (ii == 3) { return vec3f(p, q, v); }
+  if (ii == 4) { return vec3f(t, p, v); }
+  return vec3f(v, p, q);
+}
+
+fn applyImageProcessing(color: vec3f) -> vec3f {
+  var result = color;
+  result = result + vec3f(uniforms.brightness);
+  let contrastFactor = (1.0 + uniforms.contrast);
   result = (result - 0.5) * contrastFactor + 0.5;
+  result = pow(clamp(result, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / uniforms.gamma));
+  let gray = vec3f(luminance(result));
+  let satFactor = 1.0 + uniforms.saturation;
+  result = mix(gray, result, satFactor);
+  if (abs(uniforms.hue) > 0.001) {
+    let hsv = rgbToHsv(result);
+    let newHue = fract(hsv.x + uniforms.hue + 1.0);
+    result = hsvToRgb(vec3f(newHue, hsv.y, hsv.z));
+  }
   return clamp(result, vec3f(0.0), vec3f(1.0));
 }
 
 @fragment
 fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   var color = textureSample(inputTexture, texSampler, texCoord).rgb;
-  color = applyBrightnessContrast(color, uniforms.brightness * 0.005, uniforms.contrast * 0.01);
+  color = applyImageProcessing(color);
 
   let brightness = luminance(color);
   let pixelPos = texCoord * uniforms.resolution;
@@ -134,11 +191,11 @@ export class WaveLinesEffect extends SinglePassEffect<WaveLinesOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 72;
+    return 80;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(18);
+    const data = new Float32Array(20);
     data[0] = this.options.resolution[0];
     data[1] = this.options.resolution[1];
     data[2] = this.options.lineCount;
@@ -147,16 +204,18 @@ export class WaveLinesEffect extends SinglePassEffect<WaveLinesOptions> {
     data[5] = this.options.time;
     data[6] = this.options.direction;
     data[7] = this.options.lineThickness;
-    data[8] = this.options.brightness;
-    data[9] = this.options.contrast;
-    data[10] = this.options.colorMode;
-    data[11] = this.options.foregroundColor[0];
-    data[12] = this.options.foregroundColor[1];
-    data[13] = this.options.foregroundColor[2];
-    data[14] = this.options.backgroundColor[0];
-    data[15] = this.options.backgroundColor[1];
-    data[16] = this.options.backgroundColor[2];
-    data[17] = this.options.animate ? 1 : 0;
+    data[8] = this.options.brightness * 0.005;
+    data[9] = this.options.contrast * 0.01;
+    data[10] = Math.max(0.1, this.options.gamma);
+    data[11] = this.options.saturation * 0.01;
+    data[12] = this.options.hue / 360.0;
+    data[13] = this.options.colorMode;
+    data[14] = this.options.foregroundColor[0];
+    data[15] = this.options.foregroundColor[1];
+    data[16] = this.options.foregroundColor[2];
+    data[17] = this.options.backgroundColor[0];
+    data[18] = this.options.backgroundColor[1];
+    data[19] = this.options.backgroundColor[2];
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }

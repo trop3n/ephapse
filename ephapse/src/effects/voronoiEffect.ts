@@ -4,6 +4,9 @@ export interface VoronoiOptions {
   resolution: [number, number];
   brightness: number;
   contrast: number;
+  gamma: number;
+  saturation: number;
+  hue: number;
   cellSize: number;
   edgeWidth: number;
   edgeColor: number;
@@ -15,6 +18,9 @@ const DEFAULT_OPTIONS: VoronoiOptions = {
   resolution: [0, 0],
   brightness: 0,
   contrast: 0,
+  gamma: 1,
+  saturation: 0,
+  hue: 0,
   cellSize: 30,
   edgeWidth: 0.5,
   edgeColor: 0,
@@ -32,6 +38,9 @@ struct VoronoiUniforms {
   randomize: f32,
   brightness: f32,
   contrast: f32,
+  gamma: f32,
+  saturation: f32,
+  hue: f32,
 }
 
 @group(0) @binding(0) var texSampler: sampler;
@@ -44,10 +53,62 @@ fn hash2(p: vec2f) -> vec2f {
   return fract(16.0 * k * fract(pp.x * pp.y * (pp.x + pp.y))) * 2.0 - 1.0;
 }
 
-fn applyBrightnessContrast(color: vec3f, brightness: f32, contrast: f32) -> vec3f {
-  var result = color + vec3f(brightness);
-  let contrastFactor = (1.0 + contrast) / (1.0 - contrast * 0.99);
+fn luminance(c: vec3f) -> f32 {
+  return dot(c, vec3f(0.299, 0.587, 0.114));
+}
+
+fn rgbToHsv(c: vec3f) -> vec3f {
+  let maxVal = max(max(c.r, c.g), c.b);
+  let minVal = min(min(c.r, c.g), c.b);
+  let delta = maxVal - minVal;
+  var h = 0.0;
+  let s = select(delta / maxVal, 0.0, maxVal == 0.0);
+  let v = maxVal;
+  if (delta > 0.0) {
+    if (maxVal == c.r) {
+      h = (c.g - c.b) / delta + select(6.0, 0.0, c.g >= c.b);
+    } else if (maxVal == c.g) {
+      h = (c.b - c.r) / delta + 2.0;
+    } else {
+      h = (c.r - c.g) / delta + 4.0;
+    }
+    h /= 6.0;
+  }
+  return vec3f(h, s, v);
+}
+
+fn hsvToRgb(c: vec3f) -> vec3f {
+  let h = c.x * 6.0;
+  let s = c.y;
+  let v = c.z;
+  let i = floor(h);
+  let f = h - i;
+  let p = v * (1.0 - s);
+  let q = v * (1.0 - s * f);
+  let t = v * (1.0 - s * (1.0 - f));
+  let ii = i32(i) % 6;
+  if (ii == 0) { return vec3f(v, t, p); }
+  if (ii == 1) { return vec3f(q, v, p); }
+  if (ii == 2) { return vec3f(p, v, t); }
+  if (ii == 3) { return vec3f(p, q, v); }
+  if (ii == 4) { return vec3f(t, p, v); }
+  return vec3f(v, p, q);
+}
+
+fn applyImageProcessing(color: vec3f) -> vec3f {
+  var result = color;
+  result = result + vec3f(uniforms.brightness);
+  let contrastFactor = (1.0 + uniforms.contrast);
   result = (result - 0.5) * contrastFactor + 0.5;
+  result = pow(clamp(result, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / uniforms.gamma));
+  let gray = vec3f(luminance(result));
+  let satFactor = 1.0 + uniforms.saturation;
+  result = mix(gray, result, satFactor);
+  if (abs(uniforms.hue) > 0.001) {
+    let hsv = rgbToHsv(result);
+    let newHue = fract(hsv.x + uniforms.hue + 1.0);
+    result = hsvToRgb(vec3f(newHue, hsv.y, hsv.z));
+  }
   return clamp(result, vec3f(0.0), vec3f(1.0));
 }
 
@@ -136,7 +197,7 @@ fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
 
   var finalColor = mix(edgeCol, cellColor, edge);
 
-  finalColor = applyBrightnessContrast(finalColor, uniforms.brightness, uniforms.contrast);
+  finalColor = applyImageProcessing(finalColor);
   return vec4f(finalColor, 1.0);
 }
 `;
@@ -165,6 +226,9 @@ export class VoronoiEffect extends SinglePassEffect<VoronoiOptions> {
     data[6] = this.options.randomize;
     data[7] = this.options.brightness * 0.005;
     data[8] = this.options.contrast * 0.01;
+    data[9] = Math.max(0.1, this.options.gamma);
+    data[10] = this.options.saturation * 0.01;
+    data[11] = this.options.hue / 360.0;
     
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }
