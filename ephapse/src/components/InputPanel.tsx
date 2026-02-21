@@ -3,6 +3,65 @@ import { useAppStore } from '../store/appStore';
 import { useRef, useCallback, useState } from 'react';
 import { createImageBitmapFromFile } from '../utils/webgpu';
 
+const ALLOWED_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+  'image/gif',
+  'image/bmp',
+  'image/svg+xml',
+];
+
+const ALLOWED_VIDEO_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime',
+];
+
+const ALLOWED_IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg'];
+const ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.mov', '.qt'];
+
+function validateFile(file: File): { valid: boolean; type: 'image' | 'video' | null; error?: string } {
+  const mimeType = file.type.toLowerCase();
+  const fileName = file.name.toLowerCase();
+  const extension = '.' + fileName.split('.').pop();
+  
+  const isImageMime = ALLOWED_IMAGE_TYPES.includes(mimeType);
+  const isVideoMime = ALLOWED_VIDEO_TYPES.includes(mimeType);
+  const isImageExt = ALLOWED_IMAGE_EXTENSIONS.includes(extension);
+  const isVideoExt = ALLOWED_VIDEO_EXTENSIONS.includes(extension);
+  
+  if (isImageMime && isImageExt) {
+    return { valid: true, type: 'image' };
+  }
+  
+  if (isVideoMime && isVideoExt) {
+    return { valid: true, type: 'video' };
+  }
+  
+  if (isImageMime || isImageExt) {
+    if (!isImageMime) {
+      return { valid: false, type: null, error: `Image type "${mimeType}" is not supported. Use PNG, JPG, WebP, GIF, or BMP.` };
+    }
+    if (!isImageExt) {
+      return { valid: false, type: null, error: `File extension "${extension}" is not allowed for images.` };
+    }
+  }
+  
+  if (isVideoMime || isVideoExt) {
+    if (!isVideoMime) {
+      return { valid: false, type: null, error: `Video type "${mimeType}" is not supported. Use MP4, WebM, or OGG.` };
+    }
+    if (!isVideoExt) {
+      return { valid: false, type: null, error: `File extension "${extension}" is not allowed for videos.` };
+    }
+  }
+  
+  return { valid: false, type: null, error: 'Invalid file type. Please use PNG, JPG, WebP, GIF, MP4, or WebM.' };
+}
+
 export function InputPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -49,7 +108,7 @@ export function InputPanel() {
         video.currentTime = 0;
         resolve();
       };
-      video.onerror = () => reject(new Error('Failed to load video'));
+      video.onerror = () => reject(new Error('Failed to load video - file may be corrupted or unsupported'));
     });
     
     await video.play();
@@ -71,12 +130,15 @@ export function InputPanel() {
     setError(null);
 
     try {
-      if (file.type.startsWith('image/')) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        throw new Error(validation.error || 'Invalid file type');
+      }
+      
+      if (validation.type === 'image') {
         await handleImageFile(file);
-      } else if (file.type.startsWith('video/')) {
-        await handleVideoFile(file);
       } else {
-        throw new Error('Please select an image or video file');
+        await handleVideoFile(file);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load file');
@@ -100,12 +162,15 @@ export function InputPanel() {
     setError(null);
 
     try {
-      if (file.type.startsWith('image/')) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        throw new Error(validation.error || 'Invalid file type');
+      }
+      
+      if (validation.type === 'image') {
         await handleImageFile(file);
-      } else if (file.type.startsWith('video/')) {
-        await handleVideoFile(file);
       } else {
-        throw new Error('Please drop an image or video file');
+        await handleVideoFile(file);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load file');
@@ -171,7 +236,7 @@ export function InputPanel() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/*"
+            accept=".png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.mp4,.webm,.ogg,.mov,image/png,image/jpeg,image/webp,image/gif,image/bmp,video/mp4,video/webm,video/ogg"
             onChange={handleFileSelect}
             className="hidden"
           />
