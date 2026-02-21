@@ -4,6 +4,7 @@ import { useAppStore } from '../store/appStore';
 import { initWebGPU, setupCanvasContext } from '../utils/webgpu';
 import { generateFontAtlas, CHARSETS } from '../utils/fontAtlas';
 import { captureCanvas, downloadBlob } from '../utils/export';
+import type { InputType } from '../types/webgpu';
 import { AsciiEffect } from '../effects/asciiEffect';
 import { PostProcessEffect } from '../effects/postProcessEffect';
 import { BlockifyEffect } from '../effects/blockifyEffect';
@@ -51,6 +52,10 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
   const fontAtlasRef = useRef<FontAtlas | null>(null);
   const sourceTextureRef = useRef<GPUTexture | null>(null);
   const intermediateTextureRef = useRef<GPUTexture | null>(null);
+  const videoCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoContextRef = useRef<CanvasRenderingContext2D | null>(null);
+  const inputSourceRef = useRef<HTMLImageElement | HTMLVideoElement | ImageBitmap | null>(null);
+  const inputTypeRef = useRef<InputType | null>(null);
   const animationRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
   const isActiveRef = useRef(true);
@@ -60,6 +65,7 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
   const zoom = useAppStore((state) => state.zoom);
   const setZoom = useAppStore((state) => state.setZoom);
   const inputSource = useAppStore((state) => state.inputSource);
+  const inputType = useAppStore((state) => state.inputType);
   const activeEffect = useAppStore((state) => state.activeEffect);
 
   const cellSize = useAppStore((state) => state.character.cellSize);
@@ -635,13 +641,46 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     const canvas = canvasRef.current;
     if (!webgpu || !inputSource) return;
 
+    inputSourceRef.current = inputSource;
+    inputTypeRef.current = inputType;
+
     if (sourceTextureRef.current) {
       sourceTextureRef.current.destroy();
     }
 
+    let sourceWidth: number;
+    let sourceHeight: number;
+    let copySource: HTMLImageElement | HTMLCanvasElement | ImageBitmap;
+
+    if (inputType === 'video' && inputSource instanceof HTMLVideoElement) {
+      sourceWidth = inputSource.videoWidth;
+      sourceHeight = inputSource.videoHeight;
+      
+      if (!videoCanvasRef.current) {
+        const videoCanvas = document.createElement('canvas');
+        videoCanvasRef.current = videoCanvas;
+        videoContextRef.current = videoCanvas.getContext('2d');
+      }
+      
+      const videoCanvas = videoCanvasRef.current;
+      const videoCtx = videoContextRef.current;
+      if (videoCanvas && videoCtx) {
+        videoCanvas.width = sourceWidth;
+        videoCanvas.height = sourceHeight;
+        videoCtx.drawImage(inputSource, 0, 0);
+        copySource = videoCanvas;
+      } else {
+        return;
+      }
+    } else {
+      sourceWidth = inputSource.width;
+      sourceHeight = inputSource.height;
+      copySource = inputSource as HTMLImageElement | ImageBitmap;
+    }
+
     const texture = webgpu.device.createTexture({
       label: 'Source Texture',
-      size: { width: inputSource.width, height: inputSource.height },
+      size: { width: sourceWidth, height: sourceHeight },
       format: 'rgba8unorm',
       usage:
         GPUTextureUsage.TEXTURE_BINDING |
@@ -650,9 +689,9 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     });
 
     webgpu.device.queue.copyExternalImageToTexture(
-      { source: inputSource },
+      { source: copySource },
       { texture },
-      { width: inputSource.width, height: inputSource.height }
+      { width: sourceWidth, height: sourceHeight }
     );
 
     sourceTextureRef.current = texture;
@@ -666,7 +705,7 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
         canvas.height = Math.floor(rect.height * dpr);
       }
     }
-  }, [inputSource]);
+  }, [inputSource, inputType]);
 
   useEffect(() => {
     const effect = asciiEffectRef.current;
@@ -865,6 +904,24 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
       if (!sourceTexture) {
         animationRef.current = requestAnimationFrame(render);
         return;
+      }
+
+      const webgpu = webgpuRef.current;
+      const currentInputSource = inputSourceRef.current;
+      const currentInputType = inputTypeRef.current;
+
+      // Update texture every frame for video input
+      if (webgpu && currentInputSource && currentInputType === 'video' && currentInputSource instanceof HTMLVideoElement) {
+        const videoCanvas = videoCanvasRef.current;
+        const videoCtx = videoContextRef.current;
+        if (videoCanvas && videoCtx) {
+          videoCtx.drawImage(currentInputSource, 0, 0);
+          webgpu.device.queue.copyExternalImageToTexture(
+            { source: videoCanvas },
+            { texture: sourceTexture },
+            { width: currentInputSource.videoWidth, height: currentInputSource.videoHeight }
+          );
+        }
       }
 
       const now = performance.now();

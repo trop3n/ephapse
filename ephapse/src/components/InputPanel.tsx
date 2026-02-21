@@ -1,13 +1,15 @@
-import { Upload, Camera, Image as ImageIcon, X } from 'lucide-react';
+import { Upload, Camera, Image as ImageIcon, X, Video } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { createImageBitmapFromFile } from '../utils/webgpu';
 
 export function InputPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   
-  // Individual selectors
   const inputSource = useAppStore((state) => state.inputSource);
+  const inputType = useAppStore((state) => state.inputType);
   const inputFile = useAppStore((state) => state.inputFile);
   const isLoading = useAppStore((state) => state.isLoading);
   const error = useAppStore((state) => state.error);
@@ -19,6 +21,48 @@ export function InputPanel() {
   const clearInput = useAppStore((state) => state.clearInput);
   const togglePanel = useAppStore((state) => state.togglePanel);
 
+  const handleImageFile = useCallback(async (file: File) => {
+    setInputFile(file);
+    const imageBitmap = await createImageBitmapFromFile(file);
+    
+    setInput(
+      'image',
+      imageBitmap,
+      imageBitmap.width,
+      imageBitmap.height
+    );
+  }, [setInput, setInputFile]);
+
+  const handleVideoFile = useCallback(async (file: File) => {
+    setInputFile(file);
+    
+    const video = document.createElement('video');
+    video.src = URL.createObjectURL(file);
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    
+    videoRef.current = video;
+    
+    await new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        video.currentTime = 0;
+        resolve();
+      };
+      video.onerror = () => reject(new Error('Failed to load video'));
+    });
+    
+    await video.play();
+    setIsPlaying(true);
+    
+    setInput(
+      'video',
+      video,
+      video.videoWidth,
+      video.videoHeight
+    );
+  }, [setInput, setInputFile]);
+
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -27,26 +71,23 @@ export function InputPanel() {
     setError(null);
 
     try {
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Please select an image file (PNG, JPG, WebP, etc.)');
+      if (file.type.startsWith('image/')) {
+        await handleImageFile(file);
+      } else if (file.type.startsWith('video/')) {
+        await handleVideoFile(file);
+      } else {
+        throw new Error('Please select an image or video file');
       }
-
-      setInputFile(file);
-      const imageBitmap = await createImageBitmapFromFile(file);
-      
-      setInput(
-        'image',
-        imageBitmap,
-        imageBitmap.width,
-        imageBitmap.height
-      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load image');
+      setError(err instanceof Error ? err.message : 'Failed to load file');
       clearInput();
     } finally {
       setLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
-  }, [setInput, setInputFile, setLoading, setError, clearInput]);
+  }, [handleImageFile, handleVideoFile, setLoading, setError, clearInput]);
 
   const handleDrop = useCallback(async (event: React.DragEvent) => {
     event.preventDefault();
@@ -59,31 +100,42 @@ export function InputPanel() {
     setError(null);
 
     try {
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Please drop an image file (PNG, JPG, WebP, etc.)');
+      if (file.type.startsWith('image/')) {
+        await handleImageFile(file);
+      } else if (file.type.startsWith('video/')) {
+        await handleVideoFile(file);
+      } else {
+        throw new Error('Please drop an image or video file');
       }
-
-      setInputFile(file);
-      const imageBitmap = await createImageBitmapFromFile(file);
-      
-      setInput(
-        'image',
-        imageBitmap,
-        imageBitmap.width,
-        imageBitmap.height
-      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load image');
+      setError(err instanceof Error ? err.message : 'Failed to load file');
       clearInput();
     } finally {
       setLoading(false);
     }
-  }, [setInput, setInputFile, setLoading, setError, clearInput]);
+  }, [handleImageFile, handleVideoFile, setLoading, setError, clearInput]);
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
   }, []);
+
+  const handleClearInput = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      URL.revokeObjectURL(videoRef.current.src);
+      videoRef.current = null;
+      setIsPlaying(false);
+    }
+    clearInput();
+  }, [clearInput]);
+
+  const handleVideoClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const inputWidth = useAppStore((state) => state.inputWidth);
+  const inputHeight = useAppStore((state) => state.inputHeight);
 
   if (!panelsInput) return null;
 
@@ -119,7 +171,7 @@ export function InputPanel() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -131,22 +183,31 @@ export function InputPanel() {
             </div>
           ) : inputSource ? (
             <div className="flex flex-col items-center gap-2">
-              <ImageIcon className="w-8 h-8 text-[var(--accent)]" />
+              {inputType === 'video' ? (
+                <Video className="w-8 h-8 text-[var(--accent)]" />
+              ) : (
+                <ImageIcon className="w-8 h-8 text-[var(--accent)]" />
+              )}
               <span className="text-sm text-[var(--text-primary)] truncate max-w-full">
-                {inputFile?.name || 'Image loaded'}
+                {inputFile?.name || (inputType === 'video' ? 'Video loaded' : 'Image loaded')}
               </span>
               <span className="text-xs text-[var(--text-secondary)]">
-                {inputSource.width} × {inputSource.height}
+                {inputWidth} × {inputHeight}
               </span>
+              {inputType === 'video' && (
+                <span className="text-xs text-green-400">
+                  {isPlaying ? '▶ Playing' : '⏸ Paused'}
+                </span>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
               <Upload className="w-8 h-8 text-[var(--text-secondary)]" />
               <span className="text-sm text-[var(--text-secondary)]">
-                Drop image or click to browse
+                Drop image/video or click to browse
               </span>
               <span className="text-xs text-[var(--text-secondary)]">
-                PNG, JPG, WebP, GIF
+                PNG, JPG, WebP, GIF, MP4, WebM
               </span>
             </div>
           )}
@@ -170,11 +231,11 @@ export function InputPanel() {
           </button>
           
           <button
-            disabled
-            className="flex flex-col items-center gap-1 p-3 rounded-lg bg-[var(--bg-tertiary)] opacity-50 cursor-not-allowed"
-            title="Video support coming soon"
+            onClick={handleVideoClick}
+            disabled={isLoading}
+            className="flex flex-col items-center gap-1 p-3 rounded-lg bg-[var(--bg-tertiary)] hover:bg-[var(--bg-panel)] transition-colors disabled:opacity-50"
           >
-            <Upload className="w-5 h-5 text-[var(--text-secondary)]" />
+            <Video className="w-5 h-5 text-[var(--text-secondary)]" />
             <span className="text-xs">Video</span>
           </button>
           
@@ -199,7 +260,7 @@ export function InputPanel() {
 
         {inputSource && (
           <button
-            onClick={clearInput}
+            onClick={handleClearInput}
             className="w-full py-2 px-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm"
           >
             Clear Input
