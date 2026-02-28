@@ -237,35 +237,62 @@ fn quantizeChannel(value: f32, levels: f32) -> f32 {
   return floor(value * steps + 0.5) / steps;
 }
 
-@fragment
-fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
-  var color = textureSample(inputTexture, texSampler, texCoord).rgb;
-  color = applyImageProcessing(color);
-
-  let pixelCoord = texCoord * uniforms.resolution;
+fn getDitherThreshold(pixelCoord: vec2f, lum: f32) -> f32 {
   let methodInt = i32(uniforms.method + 0.5);
-
-  var result: vec3f;
+  var pattern: f32;
 
   if (methodInt == 0 || methodInt == 1 || methodInt == 2) {
-    let bayerValue = getBayer(pixelCoord, uniforms.matrixSize);
-    let threshold = bayerValue - 0.5;
-
-    let levels = uniforms.colorLevels;
-    let r = quantizeChannel(color.r + threshold / (levels - 1.0), levels);
-    let g = quantizeChannel(color.g + threshold / (levels - 1.0), levels);
-    let b = quantizeChannel(color.b + threshold / (levels - 1.0), levels);
-    result = vec3f(r, g, b);
+    pattern = getBayer(pixelCoord, uniforms.matrixSize);
+  } else if (methodInt == 3) {
+    return 0.0;
+  } else if (methodInt == 4) {
+    pattern = bayer16x16(pixelCoord);
+  } else if (methodInt == 5) {
+    pattern = clusteredDot(pixelCoord);
+  } else if (methodInt == 6) {
+    pattern = interleavedGradientNoise(pixelCoord);
+  } else if (methodInt == 7) {
+    pattern = blueNoise(pixelCoord);
   } else {
-    let levels = uniforms.colorLevels;
-    result = vec3f(
-      quantizeChannel(color.r, levels),
-      quantizeChannel(color.g, levels),
-      quantizeChannel(color.b, levels)
-    );
+    pattern = crosshatch(pixelCoord);
   }
 
-  return vec4f(result, 1.0);
+  var threshold = (pattern - 0.5) * uniforms.intensity;
+  if (uniforms.modulation > 0.5) {
+    threshold *= lum * 2.0;
+  }
+  return threshold;
+}
+
+@fragment
+fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
+  let pixelCoord = texCoord * uniforms.resolution;
+  let levels = uniforms.colorLevels;
+
+  if (uniforms.foregroundAndChromatic.w > 0.5) {
+    let maxD = uniforms.backgroundAndDisplace.w;
+    let rOff = vec2f(cos(uniforms.chromaticRedAngle),   sin(uniforms.chromaticRedAngle))   * maxD / uniforms.resolution;
+    let gOff = vec2f(cos(uniforms.chromaticGreenAngle), sin(uniforms.chromaticGreenAngle)) * maxD / uniforms.resolution;
+    let bOff = vec2f(cos(uniforms.chromaticBlueAngle),  sin(uniforms.chromaticBlueAngle))  * maxD / uniforms.resolution;
+
+    let rColor = applyImageProcessing(textureSample(inputTexture, texSampler, texCoord + rOff).rgb);
+    let gColor = applyImageProcessing(textureSample(inputTexture, texSampler, texCoord + gOff).rgb);
+    let bColor = applyImageProcessing(textureSample(inputTexture, texSampler, texCoord + bOff).rgb);
+
+    let threshold = getDitherThreshold(pixelCoord, luminance(rColor));
+    let r = quantizeChannel(rColor.r + threshold / (levels - 1.0), levels);
+    let g = quantizeChannel(gColor.g + threshold / (levels - 1.0), levels);
+    let b = quantizeChannel(bColor.b + threshold / (levels - 1.0), levels);
+    return vec4f(r, g, b, 1.0);
+  }
+
+  var color = textureSample(inputTexture, texSampler, texCoord).rgb;
+  color = applyImageProcessing(color);
+  let threshold = getDitherThreshold(pixelCoord, luminance(color));
+  let r = quantizeChannel(color.r + threshold / (levels - 1.0), levels);
+  let g = quantizeChannel(color.g + threshold / (levels - 1.0), levels);
+  let b = quantizeChannel(color.b + threshold / (levels - 1.0), levels);
+  return vec4f(r, g, b, 1.0);
 }
 `;
 
