@@ -67,10 +67,8 @@ struct DitheringUniforms {
   useOriginalColors: f32,
   intensity: f32,
   modulation: f32,
-  foregroundColor: vec3f,
-  chromaticEnabled: f32,
-  backgroundColor: vec3f,
-  chromaticMaxDisplace: f32,
+  foregroundAndChromatic: vec4f,
+  backgroundAndDisplace: vec4f,
   chromaticRedAngle: f32,
   chromaticGreenAngle: f32,
   chromaticBlueAngle: f32,
@@ -147,7 +145,7 @@ fn applyImageProcessing(color: vec3f) -> vec3f {
     result = vec3f(luminance(result));
   } else if (colorModeInt == 2) {
     let grayVal = luminance(result);
-    result = mix(uniforms.backgroundColor, uniforms.foregroundColor, grayVal);
+    result = mix(uniforms.backgroundAndDisplace.xyz, uniforms.foregroundAndChromatic.xyz, grayVal);
   } else if (colorModeInt == 3) {
     let grayVal = luminance(result);
     result = vec3f(grayVal * 1.2, grayVal, grayVal * 0.8);
