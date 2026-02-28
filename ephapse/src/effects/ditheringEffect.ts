@@ -12,6 +12,13 @@ export interface DitheringOptions {
   method: number;
   colorLevels: number;
   matrixSize: number;
+  intensity: number;
+  modulation: boolean;
+  chromaticEnabled: boolean;
+  chromaticMaxDisplace: number;
+  chromaticRedAngle: number;
+  chromaticGreenAngle: number;
+  chromaticBlueAngle: number;
   colorMode: number;
   useOriginalColors: boolean;
   foregroundColor: [number, number, number];
@@ -30,6 +37,13 @@ const DEFAULT_OPTIONS: DitheringOptions = {
   method: 0,
   colorLevels: 2,
   matrixSize: 4,
+  intensity: 1.0,
+  modulation: false,
+  chromaticEnabled: false,
+  chromaticMaxDisplace: 6,
+  chromaticRedAngle: 23,
+  chromaticGreenAngle: 50,
+  chromaticBlueAngle: 80,
   colorMode: 0,
   useOriginalColors: true,
   foregroundColor: [1, 1, 1],
@@ -228,34 +242,42 @@ export class DitheringEffect extends SinglePassEffect<DitheringOptions> {
   }
   
   protected getUniformBufferSize(): number {
-    return 96;
+    return 112;
   }
   
   protected writeUniforms(): void {
-    const data = new Float32Array(24);
-    data[0] = this.options.resolution[0];
-    data[1] = this.options.resolution[1];
-    data[2] = this.options.method;
-    data[3] = this.options.colorLevels;
-    data[4] = this.options.matrixSize;
-    data[5] = this.options.brightness * 0.005;
-    data[6] = this.options.contrast * 0.01;
-    data[7] = Math.max(0.1, this.options.gamma);
-    data[8] = this.options.saturation * 0.01;
-    data[9] = this.options.hue / 360.0;
+    const data = new Float32Array(28);
+    data[0]  = this.options.resolution[0];
+    data[1]  = this.options.resolution[1];
+    data[2]  = this.options.method;
+    data[3]  = this.options.colorLevels;
+    data[4]  = this.options.matrixSize;
+    data[5]  = this.options.brightness * 0.005;
+    data[6]  = this.options.contrast * 0.01;
+    data[7]  = Math.max(0.1, this.options.gamma);
+    data[8]  = this.options.saturation * 0.01;
+    data[9]  = this.options.hue / 360.0;
     data[10] = this.options.sharpness;
     data[11] = this.options.blur;
     data[12] = this.options.colorMode;
     data[13] = this.options.useOriginalColors ? 1.0 : 0.0;
-    // foregroundColor at offset 64 (index 16)
+    data[14] = this.options.intensity;                          // fills former padding
+    data[15] = this.options.modulation ? 1.0 : 0.0;            // fills former padding
+    // foregroundColor at offset 64 (index 16) — alignment preserved
     data[16] = this.options.foregroundColor[0];
     data[17] = this.options.foregroundColor[1];
     data[18] = this.options.foregroundColor[2];
-    // backgroundColor at offset 80 (index 20)
+    data[19] = this.options.chromaticEnabled ? 1.0 : 0.0;      // fills former vec3 padding
+    // backgroundColor at offset 80 (index 20) — alignment preserved
     data[20] = this.options.backgroundColor[0];
     data[21] = this.options.backgroundColor[1];
     data[22] = this.options.backgroundColor[2];
-    
+    data[23] = this.options.chromaticMaxDisplace;               // fills former vec3 padding
+    // angles stored as radians
+    data[24] = this.options.chromaticRedAngle   * Math.PI / 180.0;
+    data[25] = this.options.chromaticGreenAngle * Math.PI / 180.0;
+    data[26] = this.options.chromaticBlueAngle  * Math.PI / 180.0;
+    // data[27] = implicit padding, left as 0
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
   }
 }
