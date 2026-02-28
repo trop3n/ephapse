@@ -65,8 +65,15 @@ struct DitheringUniforms {
   blur: f32,
   colorMode: f32,
   useOriginalColors: f32,
+  intensity: f32,
+  modulation: f32,
   foregroundColor: vec3f,
+  chromaticEnabled: f32,
   backgroundColor: vec3f,
+  chromaticMaxDisplace: f32,
+  chromaticRedAngle: f32,
+  chromaticGreenAngle: f32,
+  chromaticBlueAngle: f32,
 }
 
 @group(0) @binding(0) var texSampler: sampler;
@@ -193,6 +200,38 @@ fn getBayer(p: vec2f, size: f32) -> f32 {
   } else {
     return bayer8x8(p);
   }
+}
+
+fn bayer16x16(p: vec2f) -> f32 {
+  let x = i32(p.x) & 15;
+  let y = i32(p.y) & 15;
+  let b8 = i32(bayer8x8(vec2f(f32(x & 7), f32(y & 7))) * 64.0 + 0.5);
+  let b2 = i32(bayer2x2(vec2f(f32(x >> 3), f32(y >> 3))) * 4.0 + 0.5);
+  return f32(4 * b8 + b2) / 256.0;
+}
+
+fn clusteredDot(p: vec2f) -> f32 {
+  let x = f32(((i32(p.x) % 6) + 6) % 6);
+  let y = f32(((i32(p.y) % 6) + 6) % 6);
+  let dx = x - 2.5;
+  let dy = y - 2.5;
+  return clamp(sqrt(dx * dx + dy * dy) / 3.536, 0.0, 1.0);
+}
+
+fn interleavedGradientNoise(p: vec2f) -> f32 {
+  return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
+}
+
+fn blueNoise(p: vec2f) -> f32 {
+  return fract(interleavedGradientNoise(p) + 0.61803398875);
+}
+
+fn crosshatch(p: vec2f) -> f32 {
+  let x = i32(p.x) & 7;
+  let y = i32(p.y) & 7;
+  let d1 = f32((x + y) & 7) / 8.0;
+  let d2 = f32((x - y + 8) & 7) / 8.0;
+  return min(d1, d2);
 }
 
 fn quantizeChannel(value: f32, levels: f32) -> f32 {
