@@ -249,7 +249,14 @@ interface EffectSettings {
   ditheringMethod: number;
   ditheringColorLevels: number;
   ditheringMatrixSize: number;
-  
+  ditheringIntensity: number;
+  ditheringModulation: boolean;
+  ditheringChromaticEnabled: boolean;
+  ditheringChromaticMaxDisplace: number;
+  ditheringChromaticRedAngle: number;
+  ditheringChromaticGreenAngle: number;
+  ditheringChromaticBlueAngle: number;
+
   // Matrix Rain (legacy - can remove if not used)
   rainSpeed: number;
   trailLength: number;
@@ -465,6 +472,13 @@ const defaultEffectSettings: EffectSettings = {
   ditheringMethod: 0,
   ditheringColorLevels: 2,
   ditheringMatrixSize: 4,
+  ditheringIntensity: 1.0,
+  ditheringModulation: false,
+  ditheringChromaticEnabled: false,
+  ditheringChromaticMaxDisplace: 6,
+  ditheringChromaticRedAngle: 23,
+  ditheringChromaticGreenAngle: 50,
+  ditheringChromaticBlueAngle: 80,
   rainSpeed: 1,
   trailLength: 15,
   rainColor: [0, 1, 0],
