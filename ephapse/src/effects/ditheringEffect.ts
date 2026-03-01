@@ -267,7 +267,7 @@ fn getDitherThreshold(pixelCoord: vec2f, lum: f32) -> f32 {
 @fragment
 fn fragmentMain(@location(0) texCoord: vec2f) -> @location(0) vec4f {
   let pixelCoord = texCoord * uniforms.resolution;
-  let levels = uniforms.colorLevels;
+  let levels = max(uniforms.colorLevels, 2.0);
 
   if (uniforms.foregroundAndChromatic.w > 0.5) {
     let maxD = uniforms.backgroundAndDisplace.w;
