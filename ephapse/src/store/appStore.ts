@@ -315,6 +315,7 @@ interface AppState {
   
   // Preset actions
   savePreset: (name: string) => void;
+  loadPresetData: (preset: Preset) => void;
   loadPreset: (id: string) => void;
   deletePreset: (id: string) => void;
   renamePreset: (id: string, name: string) => void;
@@ -610,11 +611,7 @@ export const useAppStore = create<AppState>()(
         set({ presets: [...state.presets, preset] });
       },
       
-      loadPreset: (id) => {
-        const state = get();
-        const preset = state.presets.find((p) => p.id === id);
-        if (!preset) return;
-        
+      loadPresetData: (preset) => {
         set({
           activeEffect: preset.effect,
           character: { ...preset.settings.character },
@@ -624,6 +621,12 @@ export const useAppStore = create<AppState>()(
           postProcessing: { ...preset.settings.postProcessing },
           effectSettings: { ...preset.settings.effectSettings },
         });
+      },
+
+      loadPreset: (id) => {
+        const preset = get().presets.find((p) => p.id === id);
+        if (!preset) return;
+        get().loadPresetData(preset);
       },
       
       deletePreset: (id) => {
