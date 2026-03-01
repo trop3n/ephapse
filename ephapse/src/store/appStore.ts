@@ -333,7 +333,7 @@ interface AppState {
 }
 
 // Default settings
-const defaultCharacterSettings: CharacterSettings = {
+export const defaultCharacterSettings: CharacterSettings = {
   charset: ' .:-=+*#%@',
   cellSize: 12,
   spacing: 0.1,
@@ -341,7 +341,7 @@ const defaultCharacterSettings: CharacterSettings = {
   invert: false,
 };
 
-const defaultImageSettings: ImageSettings = {
+export const defaultImageSettings: ImageSettings = {
   brightness: 0,
   contrast: 0,
   gamma: 1,
@@ -351,14 +351,14 @@ const defaultImageSettings: ImageSettings = {
   hue: 0,
 };
 
-const defaultColorSettings: ColorSettings = {
+export const defaultColorSettings: ColorSettings = {
   mode: 'color',
   foregroundColor: [0, 1, 0], // Green
   backgroundColor: [0, 0, 0], // Black
   useOriginalColors: true,
 };
 
-const defaultAdvancedSettings: AdvancedSettings = {
+export const defaultAdvancedSettings: AdvancedSettings = {
   edgeEnhance: 0,
   quantizeColors: 0,
   spatialWeight: 0,
@@ -366,7 +366,7 @@ const defaultAdvancedSettings: AdvancedSettings = {
   matchQuality: 'balanced',
 };
 
-const defaultPostProcessingSettings: PostProcessingSettings = {
+export const defaultPostProcessingSettings: PostProcessingSettings = {
   bloom: { enabled: false, intensity: 0.5 },
   grain: { enabled: true, intensity: 35, size: 2, speed: 50 },
   chromatic: { enabled: false, offset: 2 },
@@ -376,7 +376,7 @@ const defaultPostProcessingSettings: PostProcessingSettings = {
   phosphor: { enabled: false, color: [0, 1, 0] },
 };
 
-const defaultEffectSettings: EffectSettings = {
+export const defaultEffectSettings: EffectSettings = {
   blockifySize: 8,
   blockifyStyle: 0,
   blockifyBorderWidth: 1,
