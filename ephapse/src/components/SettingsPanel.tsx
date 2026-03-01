@@ -231,13 +231,6 @@ export function SettingsPanel() {
 
   if (!panelsSettings) return null;
 
-  // chromatic selectors used in Task 6 (dithering chromatic panel)
-  void effectDitheringChromaticEnabled;
-  void effectDitheringChromaticMaxDisplace;
-  void effectDitheringChromaticRedAngle;
-  void effectDitheringChromaticGreenAngle;
-  void effectDitheringChromaticBlueAngle;
-
   return (
     <div className="w-72 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col shrink-0">
       <div className="h-10 flex items-center justify-between px-3 border-b border-[var(--border)]">
