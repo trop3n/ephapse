@@ -352,7 +352,7 @@ export const defaultImageSettings: ImageSettings = {
   hue: 0,
 };
 
-export const defaultColorSettings: ColorSettings = {
+const defaultColorSettings: ColorSettings = {
   mode: 'color',
   foregroundColor: [0, 1, 0], // Green
   backgroundColor: [0, 0, 0], // Black
@@ -367,7 +367,7 @@ export const defaultAdvancedSettings: AdvancedSettings = {
   matchQuality: 'balanced',
 };
 
-export const defaultPostProcessingSettings: PostProcessingSettings = {
+const defaultPostProcessingSettings: PostProcessingSettings = {
   bloom: { enabled: false, intensity: 0.5 },
   grain: { enabled: true, intensity: 35, size: 2, speed: 50 },
   chromatic: { enabled: false, offset: 2 },
