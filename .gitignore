@@ -23,7 +23,7 @@ CLAUDE.md
 *.njsproj
 *.sln
 *.sw?
-
+*.png
 # Agent progress tracking
 ephapse/AGENTS.md
 grainrad-analysis.md
