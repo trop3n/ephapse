@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Save, Trash2, Download, RotateCcw, Check } from 'lucide-react';
 import { useAppStore, type Preset } from '../store/appStore';
+import { BUILTIN_PRESETS } from '../data/builtinPresets';
 
 const EFFECT_NAMES: Record<string, string> = {
   ascii: 'ASCII',
@@ -44,6 +45,7 @@ export function PresetsPanel() {
   const deletePreset = useAppStore((state) => state.deletePreset);
   const renamePreset = useAppStore((state) => state.renamePreset);
   const resetCurrentEffect = useAppStore((state) => state.resetCurrentEffect);
+  const loadPresetData = useAppStore((state) => state.loadPresetData);
   
   if (!panelsPresets) return null;
   
@@ -82,6 +84,39 @@ export function PresetsPanel() {
       </div>
       
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        {/* Built-in Presets */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-medium text-[var(--text-secondary)]">
+            Built-in Presets
+          </h3>
+          <div className="space-y-1">
+            {BUILTIN_PRESETS.map((preset) => (
+              <div
+                key={preset.id}
+                className={`p-2 rounded bg-[var(--bg-tertiary)] border ${
+                  loadedId === preset.id
+                    ? 'border-[var(--accent)]'
+                    : 'border-transparent'
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    loadPresetData(preset);
+                    setLoadedId(preset.id);
+                    setTimeout(() => setLoadedId(null), 1500);
+                  }}
+                  className="w-full text-left text-sm font-medium hover:text-[var(--accent)] transition-colors"
+                >
+                  {preset.name}
+                </button>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  {EFFECT_NAMES[preset.effect ?? ''] || preset.effect}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-2">
           <button
             onClick={resetCurrentEffect}
@@ -228,12 +263,7 @@ export function PresetsPanel() {
           </div>
         )}
         
-        {presets.length === 0 && (
-          <div className="text-center py-8 text-[var(--text-secondary)]">
-            <p className="text-sm">No presets saved</p>
-            <p className="text-xs mt-1">Save your current settings to create a preset</p>
-          </div>
-        )}
+
       </div>
     </div>
   );
