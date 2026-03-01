@@ -368,7 +368,7 @@ const defaultAdvancedSettings: AdvancedSettings = {
 
 const defaultPostProcessingSettings: PostProcessingSettings = {
   bloom: { enabled: false, intensity: 0.5 },
-  grain: { enabled: false, intensity: 20, size: 1, speed: 1 },
+  grain: { enabled: true, intensity: 35, size: 2, speed: 50 },
   chromatic: { enabled: false, offset: 2 },
   scanlines: { enabled: false, opacity: 0.3, spacing: 4 },
   vignette: { enabled: false, intensity: 0.5, radius: 0.7 },
