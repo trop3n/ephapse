@@ -5,17 +5,18 @@ import { isAnimatedEffect } from '../utils/export';
 
 interface ExportModalProps {
   onExportPNG: () => Promise<void>;
+  onExportJPEG: () => Promise<void>;
   onExportVideo: (duration: number) => Promise<void>;
 }
 
-export function ExportModal({ onExportPNG, onExportVideo }: ExportModalProps) {
+export function ExportModal({ onExportPNG, onExportJPEG, onExportVideo }: ExportModalProps) {
   const showExportModal = useAppStore((state) => state.showExportModal);
   const setShowExportModal = useAppStore((state) => state.setShowExportModal);
   const activeEffect = useAppStore((state) => state.activeEffect);
   const inputSource = useAppStore((state) => state.inputSource);
 
   const [isExporting, setIsExporting] = useState(false);
-  const [exportType, setExportType] = useState<'png' | 'video'>('png');
+  const [exportType, setExportType] = useState<'png' | 'jpeg' | 'video'>('png');
   const [videoDuration, setVideoDuration] = useState(5);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,8 @@ export function ExportModal({ onExportPNG, onExportVideo }: ExportModalProps) {
     try {
       if (exportType === 'png') {
         await onExportPNG();
+      } else if (exportType === 'jpeg') {
+        await onExportJPEG();
       } else {
         await onExportVideo(videoDuration);
       }
@@ -91,6 +94,19 @@ export function ExportModal({ onExportPNG, onExportVideo }: ExportModalProps) {
                     <span>PNG</span>
                   </button>
 
+                  <button
+                    onClick={() => setExportType('jpeg')}
+                    disabled={isExporting}
+                    className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors ${
+                      exportType === 'jpeg'
+                        ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                        : 'border-[var(--border)] hover:bg-[var(--bg-tertiary)]'
+                    }`}
+                  >
+                    <Image className="w-4 h-4" />
+                    <span>JPEG</span>
+                  </button>
+
                   {isAnimated && (
                     <button
                       onClick={() => setExportType('video')}
@@ -106,7 +122,7 @@ export function ExportModal({ onExportPNG, onExportVideo }: ExportModalProps) {
                     </button>
                   )}
                 </div>
-                {isAnimated && exportType === 'png' && (
+                {isAnimated && (exportType === 'png' || exportType === 'jpeg') && (
                   <p className="text-xs text-[var(--text-secondary)]">
                     Tip: This effect is animated. Export as video to capture the animation.
                   </p>

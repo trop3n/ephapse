@@ -20,7 +20,9 @@ export async function captureCanvas(
   device: GPUDevice,
   texture: GPUTexture,
   width: number,
-  height: number
+  height: number,
+  mimeType: string = 'image/png',
+  quality?: number
 ): Promise<Blob | null> {
   const bytesPerPixel = 4;
   const bytesPerRow = Math.ceil((width * bytesPerPixel) / 256) * 256;
@@ -66,7 +68,7 @@ export async function captureCanvas(
   ctx.putImageData(imageData, 0, 0);
 
   return new Promise((resolve) => {
-    tempCanvas.toBlob((blob) => resolve(blob), 'image/png');
+    tempCanvas.toBlob((blob) => resolve(blob), mimeType, quality);
   });
 }
 
@@ -85,6 +87,24 @@ export async function exportPNG(
   }
 
   const filename = options.filename || `ephapse-export-${Date.now()}.png`;
+  downloadBlob(blob, filename);
+}
+
+export async function exportJPEG(
+  canvas: HTMLCanvasElement,
+  device: GPUDevice,
+  texture: GPUTexture,
+  options: ExportOptions = {}
+): Promise<void> {
+  const width = texture.width;
+  const height = texture.height;
+
+  const blob = await captureCanvas(canvas, device, texture, width, height, 'image/jpeg', 0.92);
+  if (!blob) {
+    throw new Error('Failed to capture canvas');
+  }
+
+  const filename = options.filename || `ephapse-export-${Date.now()}.jpg`;
   downloadBlob(blob, filename);
 }
 

@@ -26,6 +26,7 @@ import type { FontAtlas } from '../utils/fontAtlas';
 
 export interface PreviewExportHandle {
   exportPNG: () => Promise<void>;
+  exportJPEG: () => Promise<void>;
   exportVideo: (duration: number) => Promise<void>;
 }
 
@@ -1041,6 +1042,33 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
     downloadBlob(blob, filename);
   }, [activeEffect]);
 
+  const exportJPEG = useCallback(async () => {
+    const canvas = canvasRef.current;
+    const webgpu = webgpuRef.current;
+    const sourceTexture = sourceTextureRef.current;
+
+    if (!canvas || !webgpu || !sourceTexture) {
+      throw new Error('No image loaded');
+    }
+
+    const blob = await captureCanvas(
+      canvas,
+      webgpu.device,
+      sourceTexture,
+      sourceTexture.width,
+      sourceTexture.height,
+      'image/jpeg',
+      0.92
+    );
+
+    if (!blob) {
+      throw new Error('Failed to capture image');
+    }
+
+    const filename = `ephapse-${activeEffect || 'export'}-${Date.now()}.jpg`;
+    downloadBlob(blob, filename);
+  }, [activeEffect]);
+
   const exportVideo = useCallback(async (duration: number) => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -1097,8 +1125,9 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
 
   useImperativeHandle(ref, () => ({
     exportPNG,
+    exportJPEG,
     exportVideo,
-  }), [exportPNG, exportVideo]);
+  }), [exportPNG, exportJPEG, exportVideo]);
 
   return (
     <div className="flex-1 flex flex-col bg-[var(--bg-primary)] min-w-0">

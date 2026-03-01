@@ -59,6 +59,7 @@ function App() {
 
       <ExportModal
         onExportPNG={() => previewRef.current?.exportPNG() || Promise.resolve()}
+        onExportJPEG={() => previewRef.current?.exportJPEG() || Promise.resolve()}
         onExportVideo={(duration) => previewRef.current?.exportVideo(duration) || Promise.resolve()}
       />
     </div>
