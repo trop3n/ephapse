@@ -211,7 +211,14 @@ export function SettingsPanel() {
   const effectDitheringMethod = useAppStore((state) => state.effectSettings.ditheringMethod);
   const effectDitheringColorLevels = useAppStore((state) => state.effectSettings.ditheringColorLevels);
   const effectDitheringMatrixSize = useAppStore((state) => state.effectSettings.ditheringMatrixSize);
-  
+  const effectDitheringIntensity = useAppStore((state) => state.effectSettings.ditheringIntensity);
+  const effectDitheringModulation = useAppStore((state) => state.effectSettings.ditheringModulation);
+  const effectDitheringChromaticEnabled = useAppStore((state) => state.effectSettings.ditheringChromaticEnabled);
+  const effectDitheringChromaticMaxDisplace = useAppStore((state) => state.effectSettings.ditheringChromaticMaxDisplace);
+  const effectDitheringChromaticRedAngle = useAppStore((state) => state.effectSettings.ditheringChromaticRedAngle);
+  const effectDitheringChromaticGreenAngle = useAppStore((state) => state.effectSettings.ditheringChromaticGreenAngle);
+  const effectDitheringChromaticBlueAngle = useAppStore((state) => state.effectSettings.ditheringChromaticBlueAngle);
+
   const togglePanel = useAppStore((state) => state.togglePanel);
   const toggleSettingsSection = useAppStore((state) => state.toggleSettingsSection);
   const updateCharacter = useAppStore((state) => state.updateCharacter);
@@ -223,6 +230,13 @@ export function SettingsPanel() {
   const resetSettings = useAppStore((state) => state.resetSettings);
 
   if (!panelsSettings) return null;
+
+  // chromatic selectors used in Task 6 (dithering chromatic panel)
+  void effectDitheringChromaticEnabled;
+  void effectDitheringChromaticMaxDisplace;
+  void effectDitheringChromaticRedAngle;
+  void effectDitheringChromaticGreenAngle;
+  void effectDitheringChromaticBlueAngle;
 
   return (
     <div className="w-72 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col shrink-0">
@@ -1072,10 +1086,15 @@ export function SettingsPanel() {
                 onChange={(e) => updateEffectSettings({ ditheringMethod: Number(e.target.value) })}
                 className="w-full p-2 rounded bg-[var(--bg-tertiary)] border border-[var(--border)] text-sm"
               >
-                <option value={0}>Bayer 2x2</option>
-                <option value={1}>Bayer 4x4</option>
-                <option value={2}>Bayer 8x8</option>
+                <option value={0}>Bayer 2×2</option>
+                <option value={1}>Bayer 4×4</option>
+                <option value={2}>Bayer 8×8</option>
                 <option value={3}>None (Posterize)</option>
+                <option value={4}>Bayer 16×16</option>
+                <option value={5}>Clustered Dot</option>
+                <option value={6}>Interleaved Gradient</option>
+                <option value={7}>Blue Noise</option>
+                <option value={8}>Crosshatch</option>
               </select>
             </div>
             <Slider
@@ -1086,13 +1105,31 @@ export function SettingsPanel() {
               onChange={(v) => updateEffectSettings({ ditheringColorLevels: v })}
             />
             <Slider
-              label="Matrix Size"
-              value={effectDitheringMatrixSize}
-              min={2}
-              max={8}
-              step={2}
-              onChange={(v) => updateEffectSettings({ ditheringMatrixSize: v })}
+              label="Intensity"
+              value={effectDitheringIntensity}
+              min={0}
+              max={2}
+              step={0.05}
+              onChange={(v) => updateEffectSettings({ ditheringIntensity: v })}
             />
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-[var(--text-secondary)]">Modulation</label>
+              <input
+                type="checkbox"
+                checked={effectDitheringModulation}
+                onChange={(e) => updateEffectSettings({ ditheringModulation: e.target.checked })}
+              />
+            </div>
+            {effectDitheringMethod < 4 && (
+              <Slider
+                label="Matrix Size"
+                value={effectDitheringMatrixSize}
+                min={2}
+                max={8}
+                step={2}
+                onChange={(v) => updateEffectSettings({ ditheringMatrixSize: v })}
+              />
+            )}
           </div>
         )}
 
