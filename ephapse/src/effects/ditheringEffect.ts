@@ -241,8 +241,12 @@ fn getDitherThreshold(pixelCoord: vec2f, lum: f32) -> f32 {
   let methodInt = i32(uniforms.method + 0.5);
   var pattern: f32;
 
-  if (methodInt == 0 || methodInt == 1 || methodInt == 2) {
-    pattern = getBayer(pixelCoord, uniforms.matrixSize);
+  if (methodInt == 0) {
+    pattern = bayer2x2(pixelCoord);
+  } else if (methodInt == 1) {
+    pattern = bayer4x4(pixelCoord);
+  } else if (methodInt == 2) {
+    pattern = bayer8x8(pixelCoord);
   } else if (methodInt == 3) {
     return 0.0;
   } else if (methodInt == 4) {

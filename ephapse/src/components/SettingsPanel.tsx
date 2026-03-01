@@ -210,7 +210,6 @@ export function SettingsPanel() {
   
   const effectDitheringMethod = useAppStore((state) => state.effectSettings.ditheringMethod);
   const effectDitheringColorLevels = useAppStore((state) => state.effectSettings.ditheringColorLevels);
-  const effectDitheringMatrixSize = useAppStore((state) => state.effectSettings.ditheringMatrixSize);
   const effectDitheringIntensity = useAppStore((state) => state.effectSettings.ditheringIntensity);
   const effectDitheringModulation = useAppStore((state) => state.effectSettings.ditheringModulation);
   const effectDitheringChromaticEnabled = useAppStore((state) => state.effectSettings.ditheringChromaticEnabled);
@@ -1161,16 +1160,7 @@ export function SettingsPanel() {
                 </div>
               )}
             </div>
-            {effectDitheringMethod < 4 && (
-              <Slider
-                label="Matrix Size"
-                value={effectDitheringMatrixSize}
-                min={2}
-                max={8}
-                step={2}
-                onChange={(v) => updateEffectSettings({ ditheringMatrixSize: v })}
-              />
-            )}
+
           </div>
         )}
 
