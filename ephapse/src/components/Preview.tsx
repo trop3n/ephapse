@@ -204,6 +204,13 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
   const ditheringMethod = useAppStore((state) => state.effectSettings.ditheringMethod);
   const ditheringColorLevels = useAppStore((state) => state.effectSettings.ditheringColorLevels);
   const ditheringMatrixSize = useAppStore((state) => state.effectSettings.ditheringMatrixSize);
+  const ditheringIntensity = useAppStore((state) => state.effectSettings.ditheringIntensity);
+  const ditheringModulation = useAppStore((state) => state.effectSettings.ditheringModulation);
+  const ditheringChromaticEnabled = useAppStore((state) => state.effectSettings.ditheringChromaticEnabled);
+  const ditheringChromaticMaxDisplace = useAppStore((state) => state.effectSettings.ditheringChromaticMaxDisplace);
+  const ditheringChromaticRedAngle = useAppStore((state) => state.effectSettings.ditheringChromaticRedAngle);
+  const ditheringChromaticGreenAngle = useAppStore((state) => state.effectSettings.ditheringChromaticGreenAngle);
+  const ditheringChromaticBlueAngle = useAppStore((state) => state.effectSettings.ditheringChromaticBlueAngle);
 
   const asciiSettings = useMemo(() => ({
     cellSize,
@@ -467,6 +474,13 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
       method: ditheringMethod,
       colorLevels: ditheringColorLevels,
       matrixSize: ditheringMatrixSize,
+      intensity: ditheringIntensity,
+      modulation: ditheringModulation,
+      chromaticEnabled: ditheringChromaticEnabled,
+      chromaticMaxDisplace: ditheringChromaticMaxDisplace,
+      chromaticRedAngle: ditheringChromaticRedAngle,
+      chromaticGreenAngle: ditheringChromaticGreenAngle,
+      chromaticBlueAngle: ditheringChromaticBlueAngle,
       brightness,
       contrast,
       gamma,
@@ -479,7 +493,7 @@ export const Preview = forwardRef<PreviewExportHandle>((_props, ref) => {
       foregroundColor,
       backgroundColor,
     };
-  }, [ditheringMethod, ditheringColorLevels, ditheringMatrixSize, brightness, contrast, gamma, saturation, hue, sharpness, blur, colorMode, useOriginalColors, foregroundColor, backgroundColor]);
+  }, [ditheringMethod, ditheringColorLevels, ditheringMatrixSize, ditheringIntensity, ditheringModulation, ditheringChromaticEnabled, ditheringChromaticMaxDisplace, ditheringChromaticRedAngle, ditheringChromaticGreenAngle, ditheringChromaticBlueAngle, brightness, contrast, gamma, saturation, hue, sharpness, blur, colorMode, useOriginalColors, foregroundColor, backgroundColor]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -1113,6 +1113,54 @@ export function SettingsPanel() {
                 onChange={(e) => updateEffectSettings({ ditheringModulation: e.target.checked })}
               />
             </div>
+            {/* Chromatic Effects */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Chromatic Effects</label>
+                <input
+                  type="checkbox"
+                  checked={effectDitheringChromaticEnabled}
+                  onChange={(e) => updateEffectSettings({ ditheringChromaticEnabled: e.target.checked })}
+                />
+              </div>
+              {effectDitheringChromaticEnabled && (
+                <div className="space-y-3 pl-2 border-l border-[var(--border)]">
+                  <Slider
+                    label="Max Displace"
+                    value={effectDitheringChromaticMaxDisplace}
+                    min={0}
+                    max={20}
+                    step={0.5}
+                    onChange={(v) => updateEffectSettings({ ditheringChromaticMaxDisplace: v })}
+                    suffix="px"
+                  />
+                  <Slider
+                    label="Red Channel"
+                    value={effectDitheringChromaticRedAngle}
+                    min={0}
+                    max={360}
+                    onChange={(v) => updateEffectSettings({ ditheringChromaticRedAngle: v })}
+                    suffix="°"
+                  />
+                  <Slider
+                    label="Green Channel"
+                    value={effectDitheringChromaticGreenAngle}
+                    min={0}
+                    max={360}
+                    onChange={(v) => updateEffectSettings({ ditheringChromaticGreenAngle: v })}
+                    suffix="°"
+                  />
+                  <Slider
+                    label="Blue Channel"
+                    value={effectDitheringChromaticBlueAngle}
+                    min={0}
+                    max={360}
+                    onChange={(v) => updateEffectSettings({ ditheringChromaticBlueAngle: v })}
+                    suffix="°"
+                  />
+                </div>
+              )}
+            </div>
             {effectDitheringMethod < 4 && (
               <Slider
                 label="Matrix Size"
